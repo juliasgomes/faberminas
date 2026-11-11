@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light only;
+  --brand-primary: #004d61;
+  --brand-hover: #003a49;
+}
+
+html, body {
+  color-scheme: light only;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  forced-color-adjust: none;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Cores estritamente baseadas em #004d61 */
+.bg-brand-strict {
+  background-color: #004d61 !important;
+  color: #ffffff !important;
+}
+
+.bg-brand-strict-hover:hover {
+  background-color: #003a49 !important;
+}
+
+.text-brand-strict {
+  color: #004d61 !important;
+}
+
+.border-brand-strict {
+  border-color: #004d61 !important;
+}
+
+/* Animações e microinterações caprichadas nos botões */
+.btn-anim {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.22s ease,
+              border-color 0.22s ease,
+              color 0.22s ease;
+  user-select: none;
+}
+
+.btn-anim::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.btn-anim:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -5px rgba(0, 77, 97, 0.35);
+}
+
+.btn-anim:hover::after {
+  left: 140%;
+}
+
+.btn-anim:active {
+  transform: translateY(1px) scale(0.96) !important;
+  box-shadow: 0 3px 8px -2px rgba(0, 77, 97, 0.25);
+}
+
+.btn-anim svg {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-anim:hover svg.icon-down {
+  transform: translateY(3px);
+}
+
+.btn-anim:hover svg.icon-right {
+  transform: translateX(4px);
+}
+
+.btn-anim:hover svg.icon-pop {
+  transform: scale(1.18) rotate(-6deg);
+}
+
+/* Interação tátil de clique nos cards */
+.card-interactive {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-interactive:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 30px -8px rgba(0, 77, 97, 0.16);
+  border-color: rgba(0, 77, 97, 0.45);
+}
+
+.card-interactive:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: 0 6px 14px -4px rgba(0, 77, 97, 0.18);
+}
+
+/* Card de produto interativo com zoom suave na imagem */
+.product-card {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px -8px rgba(0, 77, 97, 0.18);
+  border-color: rgba(0, 77, 97, 0.4);
+}
+
+.product-card:active {
+  transform: translateY(-2px) scale(0.985);
+}
+
+.product-card img,
+.product-card .product-icon-wrap {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover img {
+  transform: scale(1.08);
+}
+
+.product-card:hover .product-icon-wrap {
+  transform: scale(1.12) rotate(3deg);
+}
+
+/* Links do menu com sublinhado magnético animado */
+.nav-link-anim {
+  position: relative;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-link-anim::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), left 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-link-anim:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Bolinhas interativas do rodapé */
+.social-orb {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.28s ease,
+              background-color 0.25s ease,
+              color 0.25s ease;
+}
+
+.social-orb:hover {
+  transform: translateY(-5px) scale(1.12);
+  box-shadow: 0 12px 24px -4px rgba(0, 77, 97, 0.4);
+}
+
+.social-orb:active {
+  transform: translateY(0) scale(0.92);
+}
+
+.social-orb svg {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.social-orb:hover svg {
+  transform: scale(1.15);
+}
+
+/* Botão flutuante de WhatsApp com pulso dinâmico */
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0.7); }
+  70% { box-shadow: 0 0 0 16px rgba(0, 77, 97, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0); }
+}
+
+.whatsapp-float-anim {
+  animation: pulseRing 2.4s infinite cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              background-color 0.25s ease;
+}
+
+.whatsapp-float-anim:hover {
+  transform: translateY(-4px) scale(1.12);
+  box-shadow: 0 14px 28px -4px rgba(0, 77, 97, 0.45);
+}
+
+.whatsapp-float-anim:active {
+  transform: scale(0.92);
+}
+
+/* Animação elegante e interativa na logo */
+@keyframes logoEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.logo-anim {
+  display: inline-flex;
+  align-items: center;
+  transform-origin: center;
+  animation: logoEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.25s ease;
+  cursor: pointer;
+}
+
+.logo-anim:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: drop-shadow(0 6px 16px rgba(255, 255, 255, 0.35));
+}
+
+.logo-anim:active {
+  transform: translateY(1px) scale(0.96);
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.2));
+}
+
+/* Efeito de revelação Fade-In-Up para cards na rolagem */
+@keyframes fadeInUpStagger {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUpStagger 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Efeito de iluminação radial na hero */
+.hero-glow-overlay {
+  background: radial-gradient(circle at 50% 38%, rgba(0, 77, 97, 0.6) 0%, rgba(0, 40, 51, 0.88) 65%, rgba(0, 32, 41, 0.96) 100%);
+}

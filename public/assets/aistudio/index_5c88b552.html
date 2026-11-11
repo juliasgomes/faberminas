@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#004d61">
+    <meta name="color-scheme" content="light only">
+    <title>FaberMinas</title>
+    <meta name="description" content="FaberMinas - Distribuidora de materiais de higiene, limpeza, descartáveis e suprimentos em Belo Horizonte (Alípio de Melo) e Região Metropolitana. Solicite sua cotação.">
+    <meta name="keywords" content="distribuidora de materiais de limpeza BH, materiais de higiene Belo Horizonte, descartáveis Alípio de Melo, suprimentos corporativos BH, FaberMinas">
+    <meta name="geo.region" content="BR-MG">
+    <meta name="geo.placename" content="Belo Horizonte">
+    <meta name="geo.position" content="-19.8878;-44.0005">
+
+    <!-- Tags Open Graph (Pré-visualização ao compartilhar no WhatsApp e redes) -->
+    <meta property="og:title" content="FaberMinas | Distribuidora de Materiais">
+    <meta property="og:description" content="Soluções completas em materiais de higiene, limpeza, descartáveis e suprimentos para empresas em Belo Horizonte e Região Metropolitana.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:image" content="logo.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/aistudio/Design_sem_nome_e70a3315.png">
+    <link rel="apple-touch-icon" href="assets/aistudio/Design_sem_nome_e70a3315.png">
+
+    <!-- SEO Local: Dados Estruturados Schema.org (WholesaleStore / LocalBusiness) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WholesaleStore",
+      "name": "FaberMinas",
+      "legalName": "FaberMinas Distribuidora Ltda",
+      "taxID": "27.424.764/0001-60",
+      "description": "Distribuidora de materiais de higiene, limpeza, descartáveis e suprimentos em Belo Horizonte e Região Metropolitana.",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "R. dos Arquitetos, 408",
+        "addressLocality": "Belo Horizonte",
+        "addressRegion": "MG",
+        "postalCode": "30840-160",
+        "addressCountry": "BR"
+      },
+      "openingHours": "Mo-Fr 08:00-18:00",
+      "areaServed": "Belo Horizonte e Região Metropolitana"
+    }
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter para leitura limpa e profissional -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#004d61',
+                            hover: '#003a49',
+                            light: '#eef5f7',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            color-scheme: light only;
+            --brand-primary: #004d61;
+            --brand-hover: #003a49;
+        }
+        html, body {
+            color-scheme: light only;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            forced-color-adjust: none;
+        }
+        .bg-brand-strict {
+            background-color: #004d61 !important;
+            color: #ffffff !important;
+        }
+        .bg-brand-strict-hover:hover {
+            background-color: #003a49 !important;
+        }
+        .text-brand-strict {
+            color: #004d61 !important;
+        }
+        .border-brand-strict {
+            border-color: #004d61 !important;
+        }
+
+        /* Animações e microinterações caprichadas nos botões */
+        .btn-anim {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                        box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                        background-color 0.25s ease,
+                        border-color 0.25s ease,
+                        color 0.25s ease;
+        }
+        .btn-anim::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        .btn-anim:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px -6px rgba(0, 77, 97, 0.35);
+        }
+        .btn-anim:hover::after {
+            left: 140%;
+        }
+        .btn-anim:active {
+            transform: translateY(0) scale(0.97);
+            box-shadow: 0 4px 10px -3px rgba(0, 77, 97, 0.25);
+        }
+        .btn-anim svg {
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .btn-anim:hover svg.icon-down {
+            transform: translateY(3px);
+        }
+        .btn-anim:hover svg.icon-right {
+            transform: translateX(3px);
+        }
+        .btn-anim:hover svg.icon-pop {
+            transform: scale(1.15) rotate(-6deg);
+        }
+
+        /* Bolinhas interativas do rodapé e botão flutuante */
+        .social-orb {
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.28s ease,
+                        background-color 0.25s ease;
+        }
+        .social-orb:hover {
+            transform: translateY(-4px) scale(1.08);
+            box-shadow: 0 10px 20px -4px rgba(0, 0, 0, 0.28);
+        }
+        .social-orb:active {
+            transform: translateY(-1px) scale(0.96);
+        }
+        .social-orb svg {
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .social-orb:hover svg {
+            transform: scale(1.12);
+        }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0.55); }
+            70% { box-shadow: 0 0 0 12px rgba(0, 77, 97, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0); }
+        }
+        .whatsapp-float-anim {
+            animation: pulseRing 2.6s infinite;
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
+        }
+        .whatsapp-float-anim:hover {
+            transform: translateY(-3px) scale(1.08);
+        }
+        .whatsapp-float-anim:active {
+            transform: scale(0.95);
+        }
+
+        /* Animação elegante na logo (entrada suave + crescimento fluido igual aos botões) */
+        @keyframes logoEntrance {
+            0% {
+                opacity: 0;
+                transform: translateY(-6px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .logo-anim {
+            display: inline-flex;
+            align-items: center;
+            transform-origin: center;
+            animation: logoEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                        filter 0.25s ease;
+        }
+        .logo-anim:hover {
+            transform: translateY(-2px) scale(1.06);
+            filter: drop-shadow(0 8px 18px rgba(255, 255, 255, 0.32));
+        }
+        .logo-anim:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-sans antialiased selection:bg-[#004d61] selection:text-white">
+
+    <!-- ===================================================================== -->
+    <!-- TEMPLATE DA LOGO VETORIAL EXATA (Fiel à imagem enviada: FaberMinas)   -->
+    <!-- ===================================================================== -->
+    <template id="faberminas-logo-template">
+        <svg viewBox="0 0 650 115" class="h-8 sm:h-10 w-auto fill-current" role="img" aria-label="FaberMinas">
+            <!-- F -->
+            <path d="M12 18 H78 C83 18 86 21 86 26 V32 C86 37 83 40 78 40 H36 V54 H68 C73 54 76 57 76 62 V67 C76 72 73 75 68 75 H36 V94 C36 99 33 102 28 102 H18 C13 102 10 99 10 94 V26 C10 21 13 18 18 18 Z"/>
+            <!-- a -->
+            <path d="M128 38 C149 38 162 49 162 69 V94 C162 99 159 102 154 102 H146 C141 102 138 99 138 95 V92 C133 99 125 103 115 103 C99 103 88 93 88 80 C88 66 100 58 121 58 H138 V57 C138 51 133 48 125 48 C118 48 112 50 107 53 C103 55 99 54 97 50 L94 46 C92 42 93 39 97 37 C105 33 116 38 128 38 Z M121 88 C131 88 138 83 138 75 V71 H122 C113 71 109 74 109 79 C109 85 114 88 121 88 Z"/>
+            <!-- b -->
+            <path d="M180 18 H192 C197 18 200 21 200 26 V45 C205 39 213 36 222 36 C241 36 254 50 254 70 C254 90 241 103 221 103 C211 103 203 99 198 93 V95 C198 99 195 102 190 102 H180 C175 102 172 99 172 94 V26 C172 21 175 18 180 18 Z M214 86 C225 86 232 79 232 70 C232 60 225 53 214 53 C204 53 197 60 197 70 C197 79 204 86 214 86 Z"/>
+            <!-- e -->
+            <path d="M298 36 C319 36 333 50 333 69 C333 74 330 77 325 77 H283 C285 84 291 88 300 88 C307 88 313 86 318 82 C322 79 326 80 328 84 L331 88 C333 92 332 95 328 98 C320 102 310 104 299 104 C276 104 261 90 261 70 C261 50 276 36 298 36 Z M283 63 H312 C311 56 306 51 298 51 C290 51 285 56 283 63 Z"/>
+            <!-- r -->
+            <path d="M351 37 H361 C366 37 369 40 369 45 V49 C373 41 380 36 389 36 C393 36 396 39 396 44 V52 C396 57 393 59 388 59 C376 59 369 65 369 77 V94 C369 99 366 102 361 102 H351 C346 102 343 99 343 94 V45 C343 40 346 37 351 37 Z"/>
+            <!-- M (arcos superiores largos e arredondados característicos da logo) -->
+            <path d="M408 32 C408 21 416 16 427 16 C439 16 449 21 456 29 C463 21 473 16 485 16 C501 16 512 27 512 45 V94 C512 99 509 102 504 102 H493 C488 102 485 99 485 94 V47 C485 39 480 35 473 35 C466 35 461 40 461 48 V94 C461 99 458 102 453 102 H444 C439 102 436 99 436 94 V48 C436 40 431 35 424 35 C417 35 412 39 412 47 V94 C412 99 409 102 404 102 H396 C391 102 388 99 388 94 V45 C388 37 395 32 408 32 Z" transform="translate(15, 0)"/>
+            <!-- i (haste reta sem pingo separado, fiel à imagem) -->
+            <path d="M542 37 H554 C559 37 562 40 562 45 V94 C562 99 559 102 554 102 H542 C537 102 534 99 534 94 V45 C534 40 537 37 542 37 Z"/>
+            <!-- n -->
+            <path d="M582 37 H592 C597 37 600 40 600 45 V48 C605 40 613 36 623 36 C639 36 649 46 649 64 V94 C649 99 646 102 641 102 H630 C625 102 622 99 622 94 V66 C622 58 618 54 611 54 C604 54 599 59 599 67 V94 C599 99 596 102 591 102 H582 C577 102 574 99 574 94 V45 C574 40 577 37 582 37 Z"/>
+            <!-- a (ajustado no viewBox expandido) -->
+        </svg>
+    </template>
+
+    <!-- ===================================================================== -->
+    <!-- VISÃO 1: SITE PÚBLICO (#/)                                            -->
+    <!-- ===================================================================== -->
+    <div id="public-view">
+        
+        <!-- 1. CABEÇALHO (#004d61 padronizado) -->
+        <header class="sticky top-0 z-40 bg-brand-strict bg-[#004d61] text-white shadow-md border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-24 sm:h-28">
+                    
+                    <!-- Logo PNG Transparente Exata FaberMinas -->
+                    <a href="#inicio" class="logo-anim focus:outline-none py-2" aria-label="FaberMinas Início">
+                        <img 
+                            id="header-logo-img" 
+                            src="logo.png" 
+                            alt="FaberMinas" 
+                            class="h-12 sm:h-16 w-auto object-contain"
+                            onerror="this.classList.add('hidden'); document.getElementById('header-logo-fallback').classList.remove('hidden');"
+                        >
+                        <svg id="header-logo-fallback" viewBox="0 0 795 115" class="hidden h-11 sm:h-14 w-auto fill-white" role="img" aria-label="FaberMinas">
+                            <!-- F -->
+                            <path d="M10 24 C10 19 13 16 18 16 H78 C83 16 86 19 86 24 V31 C86 36 83 39 78 39 H36 V53 H68 C73 53 76 56 76 61 V67 C76 72 73 75 68 75 H36 V94 C36 99 33 102 28 102 H18 C13 102 10 99 10 94 Z"/>
+                            <!-- a -->
+                            <path d="M126 37 C148 37 161 48 161 68 V94 C161 99 158 102 153 102 H145 C140 102 137 99 137 95 V92 C132 99 124 103 114 103 C97 103 86 93 86 80 C86 66 98 58 120 58 H137 V57 C137 51 132 48 124 48 C117 48 111 50 105 53 C101 55 97 54 95 50 L92 46 C90 42 91 39 95 37 C104 33 115 37 126 37 Z M120 88 C130 88 137 83 137 75 V71 H121 C112 71 108 74 108 79 C108 85 113 88 120 88 Z"/>
+                            <!-- b -->
+                            <path d="M180 16 H192 C197 16 200 19 200 24 V44 C205 38 213 35 222 35 C241 35 254 49 254 69 C254 89 241 103 221 103 C211 103 203 99 198 93 V95 C198 99 195 102 190 102 H180 C175 102 172 99 172 94 V24 C172 19 175 16 180 16 Z M214 86 C225 86 232 79 232 69 C232 59 225 52 214 52 C204 52 197 59 197 69 C197 79 204 86 214 86 Z"/>
+                            <!-- e -->
+                            <path d="M298 35 C319 35 333 49 333 68 C333 73 330 76 325 76 H283 C285 83 291 87 300 87 C307 87 313 85 318 81 C322 78 326 79 328 83 L331 87 C333 91 332 94 328 97 C320 101 310 103 299 103 C276 103 261 89 261 69 C261 49 276 35 298 35 Z M283 62 H312 C311 55 306 50 298 50 C290 50 285 55 283 62 Z"/>
+                            <!-- r -->
+                            <path d="M351 36 H361 C366 36 369 39 369 44 V48 C373 40 380 35 389 35 C393 35 396 38 396 43 V51 C396 56 393 58 388 58 C376 58 369 64 369 76 V94 C369 99 366 102 361 102 H351 C346 102 343 99 343 94 V44 C343 39 346 36 351 36 Z"/>
+                            <!-- M -->
+                            <path d="M405 42 C405 25 417 15 435 15 C447 15 457 20 464 28 C471 20 481 15 494 15 C512 15 524 26 524 44 V94 C524 99 521 102 516 102 H505 C500 102 497 99 497 94 V46 C497 38 492 34 484 34 C477 34 472 39 472 47 V94 C472 99 469 102 464 102 H456 C451 102 448 99 448 94 V47 C448 39 443 34 436 34 C428 34 423 38 423 46 V94 C423 99 420 102 415 102 H413 C408 102 405 99 405 94 Z"/>
+                            <!-- i -->
+                            <path d="M546 36 H558 C563 36 566 39 566 44 V94 C566 99 563 102 558 102 H546 C541 102 538 99 538 94 V44 C538 39 541 36 546 36 Z"/>
+                            <!-- n -->
+                            <path d="M586 36 H596 C601 36 604 39 604 44 V47 C609 39 617 35 627 35 C643 35 653 45 653 63 V94 C653 99 650 102 645 102 H634 C629 102 626 99 626 94 V65 C626 57 622 53 615 53 C608 53 603 58 603 66 V94 C603 99 600 102 595 102 H586 C581 102 578 99 578 94 V44 C578 39 581 36 586 36 Z"/>
+                            <!-- a -->
+                            <path d="M704 37 C726 37 739 48 739 68 V94 C739 99 736 102 731 102 H723 C718 102 715 99 715 95 V92 C710 99 702 103 692 103 C675 103 664 93 664 80 C664 66 676 58 698 58 H715 V57 C715 51 710 48 702 48 C695 48 689 50 683 53 C679 55 675 54 673 50 L670 46 C668 42 669 39 673 37 C682 33 693 37 704 37 Z M698 88 C708 88 715 83 715 75 V71 H699 C690 71 686 74 686 79 C686 85 691 88 698 88 Z"/>
+                            <!-- s -->
+                            <path d="M768 35 C777 35 785 37 791 41 C794 43 795 47 793 50 L790 54 C788 58 784 58 780 56 C776 53 771 52 767 52 C761 52 758 54 758 57 C758 61 763 62 771 64 C784 67 794 72 794 84 C794 96 783 103 767 103 C756 103 747 100 741 95 C738 92 737 89 740 85 L743 81 C746 78 749 78 753 81 C758 84 763 86 768 86 C774 86 777 84 777 81 C777 77 772 75 764 73 C751 70 741 65 741 54 C741 42 752 35 768 35 Z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Menu Desktop -->
+                    <nav class="hidden md:flex items-center space-x-8" aria-label="Navegação principal">
+                        <a href="#inicio" class="text-white/90 hover:text-white font-medium text-base py-2 border-b-2 border-transparent hover:border-white transition">Início</a>
+                        <a href="#produtos" class="text-white/90 hover:text-white font-medium text-base py-2 border-b-2 border-transparent hover:border-white transition">Produtos</a>
+                        <a href="#localizacao" class="text-white/90 hover:text-white font-medium text-base py-2 border-b-2 border-transparent hover:border-white transition">Localização</a>
+                        <a href="#contato" class="text-white/90 hover:text-white font-medium text-base py-2 border-b-2 border-transparent hover:border-white transition">Contato</a>
+                        <button type="button" onclick="openQuoteDrawer()" class="btn-anim inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-medium cursor-pointer" aria-label="Abrir cesta de cotação">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 icon-pop"></i>
+                            <span>Cotação</span>
+                            <span id="header-quote-badge" class="px-1.5 py-0.5 text-xs font-bold rounded-full bg-white text-brand-strict">0</span>
+                        </button>
+                    </nav>
+
+                    <!-- Botões Mobile (Cotação + Menu) -->
+                    <div class="md:hidden flex items-center gap-2">
+                        <button type="button" onclick="openQuoteDrawer()" class="btn-anim inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/15 text-white text-xs font-semibold cursor-pointer" aria-label="Abrir cesta de cotação">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                            <span id="mobile-quote-badge">0</span>
+                        </button>
+                        <button id="mobile-menu-btn" type="button" class="p-2.5 rounded-lg text-white hover:bg-[#003a49] focus:outline-none transition" aria-label="Abrir menu">
+                            <i data-lucide="menu" class="w-6 h-6" id="menu-icon-open"></i>
+                            <i data-lucide="x" class="w-6 h-6 hidden" id="menu-icon-close"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu Mobile Dropdown -->
+            <div id="mobile-menu" class="hidden md:hidden bg-[#003a49] border-t border-white/15">
+                <div class="px-4 pt-3 pb-5 space-y-1">
+                    <a href="#inicio" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-white hover:bg-[#004d61] transition">Início</a>
+                    <a href="#produtos" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-white hover:bg-[#004d61] transition">Produtos</a>
+                    <a href="#localizacao" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-white hover:bg-[#004d61] transition">Localização</a>
+                    <a href="#contato" class="mobile-nav-link block px-4 py-3 rounded-lg text-base font-medium text-white hover:bg-[#004d61] transition">Contato</a>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- 2. SEÇÃO INÍCIO (Escritório corporativo amplo com camada #004d61 e letras claras) -->
+            <section id="inicio" class="relative overflow-hidden bg-[#002833] pt-20 pb-24 sm:pt-28 sm:pb-32 border-b border-white/15">
+                <!-- Imagem de fundo de escritório amplo e moderno -->
+                <img 
+                    id="display-hero-bg"
+                    src="image_c08f0c.jpg" 
+                    alt="" 
+                    aria-hidden="true"
+                    class="absolute inset-0 w-full h-full object-cover object-center opacity-45"
+                    onerror="if(!this.dataset.triedFallback){this.dataset.triedFallback='1';this.src='https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1920&q=80';}else{this.style.display='none';}"
+                >
+                <!-- Camada escura em tons de petróleo (#004d61) para contraste nítido das letras claras -->
+                <div class="absolute inset-0 bg-gradient-to-b from-[#00222b]/82 via-[#003442]/78 to-[#00222b]/88 pointer-events-none"></div>
+
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-4xl mx-auto text-center">
+                        <!-- Linha de destaque superior minimalista -->
+                        <div class="w-16 h-1.5 rounded-full bg-white mx-auto mb-8 shadow-xs"></div>
+
+                        <h1 id="display-hero-title" class="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-white tracking-tight leading-[1.15] mb-6 drop-shadow-xs">
+                            Distribuidora de materiais de higiene, limpeza e suprimentos
+                        </h1>
+
+                        <p id="display-hero-subtitle" class="text-lg sm:text-xl text-white/90 font-medium leading-relaxed mb-10 max-w-2xl mx-auto">
+                            Fornecemos soluções completas para empresas, comércios, condomínios e indústrias com estoque variado, preços competitivos e entrega ágil.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <a href="#produtos" id="display-hero-cta" class="btn-anim w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-white hover:bg-slate-100 text-brand-strict font-bold text-base sm:text-lg shadow-lg">
+                                <span>Venha conhecer nossos produtos</span>
+                                <i data-lucide="arrow-down" class="w-5 h-5 icon-down"></i>
+                            </a>
+                            <a href="#contato" class="btn-anim w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-[#004d61]/80 hover:bg-[#004d61] text-white border-2 border-white font-semibold text-base sm:text-lg backdrop-blur-xs">
+                                <span>Entrar em contato</span>
+                                <i data-lucide="arrow-right" class="w-5 h-5 icon-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAIXA DE DIFERENCIAIS OPERACIONAIS EM AZUL #004d61 -->
+            <section aria-label="Diferenciais operacionais" class="relative overflow-hidden bg-brand-strict py-11 sm:py-14 border-b border-white/10">
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div id="differentials-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. SEÇÃO PRODUTOS ("Venha conhecer nossos produtos") -->
+            <section id="produtos" class="relative bg-[#F8FAFC] py-16 sm:py-24 border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    
+                    <div class="text-center max-w-2xl mx-auto mb-10">
+                        <div class="inline-flex items-center justify-center gap-2 mb-3">
+                            <span class="w-8 h-0.5 rounded-full bg-brand-strict"></span>
+                            <span class="w-2 h-2 rounded-full bg-brand-strict"></span>
+                            <span class="w-8 h-0.5 rounded-full bg-brand-strict"></span>
+                        </div>
+                        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+                            Venha conhecer nossos produtos
+                        </h2>
+                        <p class="text-slate-600 text-base">
+                            Filtre por linha de suprimentos ou pesquise pelo nome do material.
+                        </p>
+                    </div>
+
+                    <!-- Barra Unificada de Filtros Compactos + Busca -->
+                    <div class="max-w-5xl mx-auto mb-10 space-y-4">
+                        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                            <!-- Pílulas de Categoria Compactas -->
+                            <div id="category-cards" class="flex flex-wrap items-center justify-center md:justify-start gap-2" role="group" aria-label="Categorias de produtos">
+                                <!-- Preenchido via JS -->
+                            </div>
+
+                            <!-- Campo de Busca Limpo -->
+                            <div class="relative w-full md:w-72 shrink-0 bg-white rounded-xl border border-slate-200 focus-within:border-brand-strict transition">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                <input 
+                                    type="text" 
+                                    id="product-search" 
+                                    placeholder="Buscar produto..." 
+                                    class="w-full pl-10 pr-9 py-2.5 text-sm text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
+                                >
+                                <button id="clear-search-btn" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" aria-label="Limpar busca">
+                                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+                            <span id="active-category-subtitle">Exibindo itens do catálogo</span>
+                            <span id="results-count" class="font-medium text-slate-600">0 produtos</span>
+                        </div>
+                    </div>
+
+                    <!-- Grade de Produtos -->
+                    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                        <!-- Preenchido via JS -->
+                    </div>
+
+                    <!-- Botão Expandir / Recolher Catálogo Completo -->
+                    <div id="toggle-all-products-wrap" class="hidden mt-10 text-center">
+                        <button type="button" id="toggle-all-products-btn" class="btn-anim inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-brand-strict border border-brand-strict font-semibold text-sm shadow-2xs cursor-pointer">
+                            <span id="toggle-all-products-label">Ver todos os produtos</span>
+                            <i data-lucide="chevron-down" id="toggle-all-products-icon" class="w-4 h-4 icon-down"></i>
+                        </button>
+                    </div>
+
+                    <!-- Estado Vazio -->
+                    <div id="empty-state" class="hidden text-center py-14 px-4 bg-white rounded-2xl border border-slate-200 max-w-lg mx-auto">
+                        <h3 class="text-lg font-bold text-slate-900 mb-1">Nenhum produto encontrado</h3>
+                        <p class="text-sm text-slate-600 mb-5">Tente buscar outro termo ou selecione a opção "Todos".</p>
+                        <button id="reset-filters-btn" type="button" class="btn-anim px-5 py-2.5 rounded-xl bg-brand-strict bg-brand-strict-hover text-white text-sm font-semibold cursor-pointer">
+                            Mostrar todos os produtos
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 4. SEÇÃO CONTATO ("Entre em contato conosco" - Fundo #004d61 e cards brancos) -->
+            <section id="contato" class="relative overflow-hidden bg-brand-strict py-16 sm:py-24 border-b border-white/15">
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    
+                    <div class="text-center max-w-2xl mx-auto mb-12">
+                        <div class="inline-flex items-center justify-center gap-2 mb-3">
+                            <span class="w-8 h-0.5 rounded-full bg-white/80"></span>
+                            <span class="w-2 h-2 rounded-full bg-white"></span>
+                            <span class="w-8 h-0.5 rounded-full bg-white/80"></span>
+                        </div>
+                        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-3">
+                            Entre em contato conosco
+                        </h2>
+                        <p class="text-white/85 text-base">
+                            Fale com nossa equipe por telefone, WhatsApp, e-mail ou envie sua mensagem abaixo.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 max-w-6xl mx-auto">
+                        
+                        <!-- Canais Diretos (Quadradinhos Brancos) -->
+                        <div class="lg:col-span-5 space-y-4">
+                            <a id="display-whatsapp-card" href="https://wa.me/5531999998877" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-5 bg-white rounded-2xl border border-white/20 hover:-translate-y-0.5 shadow-md transition group">
+                                <div class="w-12 h-12 rounded-full bg-brand-strict text-white flex items-center justify-center shrink-0">
+                                    <i data-lucide="message-circle" class="w-6 h-6"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-strict">WhatsApp</span>
+                                    <p id="display-whatsapp-text" class="text-base font-medium text-slate-800 truncate mt-0.5">(31) 99999-8877</p>
+                                </div>
+                            </a>
+
+                            <a id="display-phone-card" href="tel:+553133334455" class="flex items-center gap-4 p-5 bg-white rounded-2xl border border-white/20 hover:-translate-y-0.5 shadow-md transition group">
+                                <div class="w-12 h-12 rounded-full bg-brand-strict text-white flex items-center justify-center shrink-0">
+                                    <i data-lucide="phone" class="w-6 h-6"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-strict">Telefone</span>
+                                    <p id="display-phone-text" class="text-base font-medium text-slate-800 truncate mt-0.5">(31) 3333-4455</p>
+                                </div>
+                            </a>
+
+                            <a id="display-email-card" href="mailto:contato@faberminas.com.br" class="flex items-center gap-4 p-5 bg-white rounded-2xl border border-white/20 hover:-translate-y-0.5 shadow-md transition group">
+                                <div class="w-12 h-12 rounded-full bg-brand-strict text-white flex items-center justify-center shrink-0">
+                                    <i data-lucide="mail" class="w-6 h-6"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-brand-strict">E-mail</span>
+                                    <p id="display-email-text" class="text-sm sm:text-base font-medium text-slate-800 truncate mt-0.5">contato@faberminas.com.br</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- Formulário Simples (Card Branco) -->
+                        <div class="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-white/20 shadow-md">
+                            <form id="contact-form" class="space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="contact-name" class="block text-sm font-medium text-slate-700 mb-1.5">Nome *</label>
+                                        <input type="text" id="contact-name" required placeholder="Seu nome" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20 transition">
+                                    </div>
+                                    <div>
+                                        <label for="contact-phone" class="block text-sm font-medium text-slate-700 mb-1.5">Telefone / WhatsApp *</label>
+                                        <input type="tel" id="contact-phone" required placeholder="(31) 90000-0000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20 transition">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="contact-email" class="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
+                                    <input type="email" id="contact-email" placeholder="seuemail@empresa.com.br" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20 transition">
+                                </div>
+
+                                <div>
+                                    <label for="contact-message" class="block text-sm font-medium text-slate-700 mb-1.5">Mensagem *</label>
+                                    <textarea id="contact-message" rows="4" required placeholder="Escreva sua mensagem ou os produtos desejados..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20 transition"></textarea>
+                                </div>
+
+                                <div class="pt-1">
+                                    <button type="submit" class="btn-anim w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-brand-strict bg-brand-strict-hover text-white font-semibold text-base shadow-xs cursor-pointer">
+                                        <span>Enviar Mensagem</span>
+                                        <i data-lucide="send" class="w-4 h-4 icon-right"></i>
+                                    </button>
+                                </div>
+
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    Ao enviar, você concorda que seus dados sejam usados exclusivamente para retorno comercial, conforme nossa 
+                                    <a href="#/privacidade" onclick="openPrivacyModal(event)" class="text-brand-strict underline hover:opacity-80 cursor-pointer">Política de Privacidade</a>.
+                                </p>
+
+                                <div id="form-feedback" class="hidden p-4 rounded-xl bg-[#004d61]/10 border border-[#004d61]/30 text-brand-strict text-sm font-medium flex items-center gap-3">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 shrink-0"></i>
+                                    <span>Mensagem recebida! Entraremos em contato em breve.</span>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. SEÇÃO LOCALIZAÇÃO (Fundo branco limpo) -->
+            <section id="localizacao" class="relative bg-white py-16 sm:py-24">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+                        
+                        <!-- Endereço e Horário -->
+                        <div class="lg:col-span-5 space-y-6">
+                            <div>
+                                <div class="w-10 h-1 rounded-full bg-brand-strict mb-4"></div>
+                                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+                                    Localização
+                                </h2>
+                                <p class="text-slate-600 text-base leading-relaxed">
+                                    Confira nosso endereço completo e horário de atendimento para retiradas e visitas comerciais.
+                                </p>
+                            </div>
+
+                            <div class="space-y-4 bg-[#F8FAFC] p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+                                <div class="flex items-start gap-3.5">
+                                    <div class="w-10 h-10 rounded-xl bg-brand-strict text-white flex items-center justify-center shrink-0 mt-0.5">
+                                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Endereço</h3>
+                                        <p id="display-address" class="text-slate-700 text-base mt-1 leading-snug whitespace-pre-line">R. dos Arquitetos, 408 — Alípio de Melo
+Belo Horizonte - MG, CEP 30840-160</p>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-200/70 pt-4 flex items-start gap-3.5">
+                                    <div class="w-10 h-10 rounded-xl bg-[#004d61]/10 text-brand-strict flex items-center justify-center shrink-0 mt-0.5">
+                                        <i data-lucide="clock" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide">Horário de Atendimento</h3>
+                                        <p id="display-hours" class="text-slate-700 text-sm sm:text-base mt-1 whitespace-pre-line">Segunda a Sexta: 08h00 às 18h00</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a id="display-maps-link" href="https://maps.google.com/?q=R.+dos+Arquitetos,+408+-+Alipio+de+Melo,+Belo+Horizonte+-+MG,+30840-160" target="_blank" rel="noopener noreferrer" class="btn-anim inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-strict bg-brand-strict-hover text-white font-semibold text-sm sm:text-base shadow-sm">
+                                    <i data-lucide="navigation" class="w-4 h-4 icon-pop"></i>
+                                    <span>Abrir no Google Maps</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Quadradinho do Google Maps -->
+                        <div class="lg:col-span-7">
+                            <div class="w-full h-[340px] sm:h-[420px] rounded-2xl overflow-hidden border-2 border-[#004d61]/15 shadow-sm bg-slate-100">
+                                <iframe 
+                                    id="display-maps-embed"
+                                    title="Mapa FaberMinas"
+                                    src="https://maps.google.com/maps?q=R.%20dos%20Arquitetos,%20408%20-%20Al%C3%ADpio%20de%20Melo,%20Belo%20Horizonte%20-%20MG,%2030840-160&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+                                    class="w-full h-full border-0" 
+                                    allowfullscreen="" 
+                                    loading="lazy" 
+                                    referrerpolicy="no-referrer-when-downgrade">
+                                </iframe>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 6. RODAPÉ (#004d61 padronizado) -->
+        <footer class="bg-brand-strict bg-[#004d61] text-white pt-14 pb-8 border-t border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center pb-10 border-b border-white/15">
+                    
+                    <!-- Logo PNG Transparente Exata + Endereço -->
+                    <div class="text-center md:text-left space-y-3.5">
+                        <a href="#inicio" class="logo-anim inline-block focus:outline-none" aria-label="FaberMinas">
+                            <img 
+                                id="footer-logo-img" 
+                                src="logo.png" 
+                                alt="FaberMinas" 
+                                class="h-11 sm:h-14 w-auto object-contain mx-auto md:mx-0"
+                                onerror="this.classList.add('hidden'); document.getElementById('footer-logo-fallback').classList.remove('hidden');"
+                            >
+                            <svg id="footer-logo-fallback" viewBox="0 0 795 115" class="hidden h-10 sm:h-12 w-auto fill-white mx-auto md:mx-0" role="img" aria-label="FaberMinas">
+                                <path d="M10 24 C10 19 13 16 18 16 H78 C83 16 86 19 86 24 V31 C86 36 83 39 78 39 H36 V53 H68 C73 53 76 56 76 61 V67 C76 72 73 75 68 75 H36 V94 C36 99 33 102 28 102 H18 C13 102 10 99 10 94 Z"/>
+                                <path d="M126 37 C148 37 161 48 161 68 V94 C161 99 158 102 153 102 H145 C140 102 137 99 137 95 V92 C132 99 124 103 114 103 C97 103 86 93 86 80 C86 66 98 58 120 58 H137 V57 C137 51 132 48 124 48 C117 48 111 50 105 53 C101 55 97 54 95 50 L92 46 C90 42 91 39 95 37 C104 33 115 37 126 37 Z M120 88 C130 88 137 83 137 75 V71 H121 C112 71 108 74 108 79 C108 85 113 88 120 88 Z"/>
+                                <path d="M180 16 H192 C197 16 200 19 200 24 V44 C205 38 213 35 222 35 C241 35 254 49 254 69 C254 89 241 103 221 103 C211 103 203 99 198 93 V95 C198 99 195 102 190 102 H180 C175 102 172 99 172 94 V24 C172 19 175 16 180 16 Z M214 86 C225 86 232 79 232 69 C232 59 225 52 214 52 C204 52 197 59 197 69 C197 79 204 86 214 86 Z"/>
+                                <path d="M298 35 C319 35 333 49 333 68 C333 73 330 76 325 76 H283 C285 83 291 87 300 87 C307 87 313 85 318 81 C322 78 326 79 328 83 L331 87 C333 91 332 94 328 97 C320 101 310 103 299 103 C276 103 261 89 261 69 C261 49 276 35 298 35 Z M283 62 H312 C311 55 306 50 298 50 C290 50 285 55 283 62 Z"/>
+                                <path d="M351 36 H361 C366 36 369 39 369 44 V48 C373 40 380 35 389 35 C393 35 396 38 396 43 V51 C396 56 393 58 388 58 C376 58 369 64 369 76 V94 C369 99 366 102 361 102 H351 C346 102 343 99 343 94 V44 C343 39 346 36 351 36 Z"/>
+                                <path d="M405 42 C405 25 417 15 435 15 C447 15 457 20 464 28 C471 20 481 15 494 15 C512 15 524 26 524 44 V94 C524 99 521 102 516 102 H505 C500 102 497 99 497 94 V46 C497 38 492 34 484 34 C477 34 472 39 472 47 V94 C472 99 469 102 464 102 H456 C451 102 448 99 448 94 V47 C448 39 443 34 436 34 C428 34 423 38 423 46 V94 C423 99 420 102 415 102 H413 C408 102 405 99 405 94 Z"/>
+                                <path d="M546 36 H558 C563 36 566 39 566 44 V94 C566 99 563 102 558 102 H546 C541 102 538 99 538 94 V44 C538 39 541 36 546 36 Z"/>
+                                <path d="M586 36 H596 C601 36 604 39 604 44 V47 C609 39 617 35 627 35 C643 35 653 45 653 63 V94 C653 99 650 102 645 102 H634 C629 102 626 99 626 94 V65 C626 57 622 53 615 53 C608 53 603 58 603 66 V94 C603 99 600 102 595 102 H586 C581 102 578 99 578 94 V44 C578 39 581 36 586 36 Z"/>
+                                <path d="M704 37 C726 37 739 48 739 68 V94 C739 99 736 102 731 102 H723 C718 102 715 99 715 95 V92 C710 99 702 103 692 103 C675 103 664 93 664 80 C664 66 676 58 698 58 H715 V57 C715 51 710 48 702 48 C695 48 689 50 683 53 C679 55 675 54 673 50 L670 46 C668 42 669 39 673 37 C682 33 693 37 704 37 Z M698 88 C708 88 715 83 715 75 V71 H699 C690 71 686 74 686 79 C686 85 691 88 698 88 Z"/>
+                                <path d="M768 35 C777 35 785 37 791 41 C794 43 795 47 793 50 L790 54 C788 58 784 58 780 56 C776 53 771 52 767 52 C761 52 758 54 758 57 C758 61 763 62 771 64 C784 67 794 72 794 84 C794 96 783 103 767 103 C756 103 747 100 741 95 C738 92 737 89 740 85 L743 81 C746 78 749 78 753 81 C758 84 763 86 768 86 C774 86 777 84 777 81 C777 77 772 75 764 73 C751 70 741 65 741 54 C741 42 752 35 768 35 Z"/>
+                            </svg>
+                        </a>
+                        <p id="footer-address" class="text-sm text-white/80 max-w-xs mx-auto md:mx-0 leading-relaxed whitespace-pre-line">R. dos Arquitetos, 408 — Alípio de Melo
+Belo Horizonte - MG, CEP 30840-160</p>
+                    </div>
+
+                    <!-- Navegação (Coluna Central com cabeçalho) -->
+                    <div class="flex flex-col items-center md:items-start md:-translate-x-8 lg:-translate-x-12 space-y-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-white">Navegação</h3>
+                        <nav class="flex flex-col items-center md:items-start space-y-2 text-sm font-medium text-white/90" aria-label="Navegação do rodapé">
+                            <a href="#inicio" class="hover:text-white transition">Início</a>
+                            <a href="#produtos" class="hover:text-white transition">Produtos</a>
+                            <a href="#contato" class="hover:text-white transition">Contato</a>
+                            <a href="#localizacao" class="hover:text-white transition">Localização</a>
+                        </nav>
+                    </div>
+
+                    <!-- Contatos com Bolinhas Interativas -->
+                    <div class="flex flex-col items-center md:items-end space-y-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-white">Contatos</h3>
+                        <div class="flex items-center justify-center md:justify-end gap-3">
+                            <a id="footer-phone-btn" href="tel:+553133334455" title="Telefone" aria-label="Telefone" class="social-orb w-11 h-11 rounded-full bg-white text-brand-strict hover:bg-white/95 flex items-center justify-center shadow-xs">
+                                <i data-lucide="phone" class="w-5 h-5"></i>
+                            </a>
+
+                            <a href="#localizacao" title="Localização" aria-label="Localização" class="social-orb w-11 h-11 rounded-full bg-white text-brand-strict hover:bg-white/95 flex items-center justify-center shadow-xs">
+                                <i data-lucide="map-pin" class="w-5 h-5"></i>
+                            </a>
+
+                            <a id="footer-email-btn" href="mailto:contato@faberminas.com.br" title="E-mail" aria-label="E-mail" class="social-orb w-11 h-11 rounded-full bg-white text-brand-strict hover:bg-white/95 flex items-center justify-center shadow-xs">
+                                <i data-lucide="mail" class="w-5 h-5"></i>
+                            </a>
+
+                            <a id="footer-whatsapp-btn" href="https://wa.me/5531999998877" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp" class="social-orb w-11 h-11 rounded-full bg-white text-brand-strict hover:bg-white/95 flex items-center justify-center shadow-xs">
+                                <i data-lucide="message-circle" class="w-5 h-5"></i>
+                            </a>
+
+                            <a id="footer-instagram-btn" href="https://instagram.com/faberminas" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Instagram" class="social-orb w-11 h-11 rounded-full bg-white text-brand-strict hover:bg-white/95 flex items-center justify-center shadow-xs">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Dados Fiscais + Copyright + Política de Privacidade (sem botão admin visível) -->
+                <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/80 text-center sm:text-left">
+                    <div class="space-y-1">
+                        <p id="footer-fiscal-info" class="text-xs text-white/75">FaberMinas Distribuidora Ltda • CNPJ: 27.424.764/0001-60</p>
+                        <p>© 2026 FaberMinas. Todos os direitos reservados.</p>
+                    </div>
+                    <a href="#/privacidade" onclick="openPrivacyModal(event)" class="inline-flex items-center gap-1.5 text-xs text-white/85 hover:text-white underline-offset-4 hover:underline transition cursor-pointer">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                        <span>Política de Privacidade</span>
+                    </a>
+                </div>
+
+            </div>
+        </footer>
+
+        <!-- BOTÃO FLUTUANTE DISCRETO DE WHATSAPP -->
+        <a id="floating-whatsapp-btn" href="https://wa.me/5531999998877" target="_blank" rel="noopener noreferrer" aria-label="Falar pelo WhatsApp" title="Falar no WhatsApp" class="whatsapp-float-anim fixed bottom-5 right-5 z-30 w-13 h-13 p-3.5 rounded-full bg-brand-strict bg-brand-strict-hover text-white border-2 border-white shadow-lg flex items-center justify-center">
+            <i data-lucide="message-circle" class="w-6 h-6"></i>
+        </a>
+
+        <!-- GAVETA LATERAL: CESTA DE COTAÇÃO (ORÇAMENTO MÚLTIPLO) -->
+        <div id="quote-drawer-backdrop" onclick="closeQuoteDrawer()" class="hidden fixed inset-0 z-50 bg-slate-900/50 transition-opacity"></div>
+        <aside id="quote-drawer" aria-label="Cesta de Cotação" class="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transform translate-x-full transition-transform duration-300 flex flex-col">
+            <div class="px-6 py-5 bg-brand-strict text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    <h2 class="font-bold text-lg">Cesta de Cotação</h2>
+                </div>
+                <button type="button" onclick="closeQuoteDrawer()" class="p-1.5 rounded-lg hover:bg-white/15 text-white transition cursor-pointer" aria-label="Fechar cesta">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="quote-drawer-body" class="flex-1 overflow-y-auto p-6 space-y-3">
+                <!-- Itens da cesta renderizados via JS -->
+            </div>
+
+            <div id="quote-drawer-footer" class="p-6 border-t border-slate-200 bg-slate-50 space-y-3">
+                <button type="button" onclick="sendQuoteViaWhatsApp()" class="btn-anim w-full py-3.5 px-4 rounded-xl bg-brand-strict bg-brand-strict-hover text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+                    <i data-lucide="message-circle" class="w-4 h-4 icon-pop"></i>
+                    <span>Enviar Cotação no WhatsApp</span>
+                </button>
+                <button type="button" onclick="fillContactWithQuote()" class="btn-anim w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-brand-strict border border-brand-strict font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="mail" class="w-4 h-4 icon-right"></i>
+                    <span>Preencher no Formulário de Contato</span>
+                </button>
+                <button type="button" onclick="clearQuoteCart()" class="w-full text-xs text-slate-500 hover:text-red-600 py-1 cursor-pointer">
+                    Limpar lista
+                </button>
+            </div>
+        </aside>
+
+        <!-- MODAL / ROTA: POLÍTICA DE PRIVACIDADE (#/privacidade) -->
+        <div id="privacy-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-xl border border-slate-200 border-t-4 border-t-[#004d61] space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-lg bg-brand-strict text-white flex items-center justify-center">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900">Política de Privacidade</h3>
+                    </div>
+                    <button type="button" onclick="closePrivacyModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer" aria-label="Fechar política">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="text-sm text-slate-600 space-y-3 leading-relaxed max-h-[62vh] overflow-y-auto pr-1">
+                    <p>
+                        A <strong id="privacy-legal-name" class="text-slate-800">FaberMinas Distribuidora Ltda</strong> (<span id="privacy-cnpj">CNPJ: 27.424.764/0001-60</span>), com sede na R. dos Arquitetos, 408 — Alípio de Melo, Belo Horizonte - MG, CEP 30840-160, respeita a privacidade e a proteção dos dados pessoais de seus clientes, parceiros e visitantes, em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
+                    </p>
+                    <p>
+                        <strong>1. Coleta e Finalidade:</strong> Os dados pessoais fornecidos voluntariamente por meio do formulário de contato, cesta de cotação ou atendimento via WhatsApp (como nome, empresa, telefone e e-mail) são utilizados exclusivamente para retorno comercial, elaboração de orçamentos, faturamento e atendimento ao cliente.
+                    </p>
+                    <p>
+                        <strong>2. Armazenamento e Segurança:</strong> Adotamos medidas técnicas e administrativas adequadas para proteger as informações contra acessos não autorizados, perda ou alteração indevida. Não vendemos, alugamos ou compartilhamos dados com terceiros para fins publicitários.
+                    </p>
+                    <p>
+                        <strong>3. Direitos do Titular:</strong> Você pode solicitar a confirmação, correção ou exclusão de seus dados de nossa base de atendimento comercial a qualquer momento por meio do e-mail oficial informado na seção de contato deste site.
+                    </p>
+                </div>
+                <div class="pt-2 flex justify-end">
+                    <button type="button" onclick="closePrivacyModal()" class="px-6 py-2.5 rounded-xl bg-brand-strict bg-brand-strict-hover text-white text-sm font-semibold cursor-pointer">
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VISÃO 2: ROTA SECRETA DE ADMINISTRAÇÃO (#/admin)                      -->
+    <!-- ===================================================================== -->
+    <div id="admin-view" class="hidden min-h-screen bg-slate-100">
+        
+        <!-- Topo do Painel Admin -->
+        <header class="bg-brand-strict text-white shadow-sm">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-lg">FaberMinas</span>
+                    <span class="text-white/40">|</span>
+                    <span class="text-sm text-white/90">Painel de Edição (#/admin)</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="voltarParaSite(event)" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-brand-strict font-semibold text-sm hover:bg-white/90 transition cursor-pointer">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                        <span>Voltar para o Site</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tela de Login Simples -->
+        <div id="admin-login-box" class="max-w-md mx-auto mt-16 px-4">
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="w-12 h-12 rounded-xl bg-brand-strict text-white flex items-center justify-center mb-5">
+                    <i data-lucide="lock" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900 mb-1">Acesso ao Gerenciador</h1>
+                <p class="text-sm text-slate-600 mb-6">Digite a senha para editar textos, produtos, fotos e contatos do site.</p>
+                
+                <form id="admin-login-form" class="space-y-4">
+                    <div>
+                        <label for="admin-password-input" class="block text-sm font-medium text-slate-700 mb-1">Senha de Acesso</label>
+                        <input type="password" id="admin-password-input" required placeholder="Digite a senha" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#004d61]">
+                        <p class="text-xs text-slate-500 mt-1.5">Senha padrão inicial: <strong class="text-slate-700">faber2026</strong></p>
+                    </div>
+                    <p id="admin-login-error" class="hidden text-sm text-red-600 font-medium">Senha incorreta. Tente novamente.</p>
+                    <button type="submit" class="w-full py-3 rounded-xl bg-brand-strict bg-brand-strict-hover text-white font-semibold text-sm transition cursor-pointer">
+                        Entrar no Painel
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Conteúdo do Painel (Após Login) -->
+        <div id="admin-dashboard" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+            
+            <!-- Barra de Ações Globais + Aviso Importante sobre Persistência Multi-dispositivo -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 space-y-4">
+                <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-lg">Edição do Site FaberMinas</h2>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+                            As edições feitas aqui ficam salvas neste aparelho. Para que <strong>todas as fotos e textos apareçam em qualquer celular ou computador</strong>, clique em <strong>"Baixar Site Atualizado (.html)"</strong> e publique esse arquivo na sua hospedagem.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <button type="button" id="download-html-btn" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-strict bg-brand-strict-hover text-white font-semibold text-sm transition cursor-pointer">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Baixar Site Atualizado (.html)</span>
+                        </button>
+                        <button type="button" id="export-json-btn" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#004d61] text-brand-strict hover:bg-[#004d61]/5 font-semibold text-sm transition cursor-pointer">
+                            <i data-lucide="file-json" class="w-4 h-4"></i>
+                            <span>Exportar Backup (.json)</span>
+                        </button>
+                        <label class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm transition cursor-pointer">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Importar Backup</span>
+                            <input type="file" id="import-json-input" accept=".json,application/json" class="hidden">
+                        </label>
+                        <button type="button" id="reset-default-btn" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm transition cursor-pointer">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <span>Restaurar Padrão</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificação Salvo -->
+            <div id="admin-toast" class="hidden fixed bottom-5 right-5 z-50 bg-brand-strict text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2.5 text-sm font-medium">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                <span id="admin-toast-text">Alterações salvas!</span>
+            </div>
+
+            <!-- Abas de Edição -->
+            <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+                <button type="button" data-tab="tab-produtos" class="admin-tab-btn px-4 py-2 rounded-xl bg-[#004d61] text-white font-semibold text-sm cursor-pointer">
+                    Produtos e Categorias
+                </button>
+                <button type="button" data-tab="tab-textos" class="admin-tab-btn px-4 py-2 rounded-xl bg-white text-slate-700 border border-slate-200 font-semibold text-sm cursor-pointer">
+                    Textos da Página Inicial
+                </button>
+                <button type="button" data-tab="tab-contato" class="admin-tab-btn px-4 py-2 rounded-xl bg-white text-slate-700 border border-slate-200 font-semibold text-sm cursor-pointer">
+                    Endereço, Mapa e Contatos
+                </button>
+            </div>
+
+            <!-- ABA 1: GERENCIAR PRODUTOS E CATEGORIAS -->
+            <div id="tab-produtos" class="admin-tab-content space-y-6">
+                
+                <!-- Formulário Adicionar / Editar Produto -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 id="product-form-title" class="text-lg font-bold text-slate-900 mb-4">Adicionar Novo Produto</h3>
+                    <form id="admin-product-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="edit-product-id">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nome do Produto *</label>
+                            <input type="text" id="prod-name" required placeholder="Ex: Papel Toalha Interfolhado" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Categoria *</label>
+                            <select id="prod-category" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:border-[#004d61]">
+                                <!-- Preenchido via JS -->
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Especificação / Embalagem *</label>
+                            <input type="text" id="prod-spec" required placeholder="Ex: Fardo com 1.000 folhas • Folha Dupla" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Foto do Produto (Opcional - Escolher do Computador/Celular)</label>
+                            <input type="file" id="prod-image-file" accept="image/*" class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#004d61]/10 file:text-[#004d61] hover:file:bg-[#004d61]/20">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Ou Link da Imagem (URL)</label>
+                            <input type="text" id="prod-image-url" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        </div>
+
+                        <div class="md:col-span-2 flex items-center gap-3 pt-2">
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-semibold text-sm transition cursor-pointer">
+                                Salvar Produto
+                            </button>
+                            <button type="button" id="cancel-edit-prod-btn" class="hidden px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium cursor-pointer">
+                                Cancelar Edição
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Produtos Cadastrados -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Produtos Cadastrados (<span id="admin-prod-count">0</span>)</h3>
+                    <div id="admin-products-list" class="divide-y divide-slate-100">
+                        <!-- Lista gerada via JS -->
+                    </div>
+                </div>
+
+                <!-- Gerenciar Categorias -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-3">Categorias (Quadradinhos do Catálogo)</h3>
+                    <form id="admin-category-form" class="flex flex-col sm:flex-row gap-3 mb-4">
+                        <input type="text" id="new-cat-name" required placeholder="Nome da nova categoria (ex: Embalagens)" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        <input type="text" id="new-cat-desc" required placeholder="Subtítulo curto (ex: Caixas e fitas)" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#004d61] text-white font-semibold text-sm cursor-pointer">
+                            Adicionar Categoria
+                        </button>
+                    </form>
+                    <div id="admin-categories-list" class="flex flex-wrap gap-2">
+                        <!-- Chips de categorias -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ABA 2: TEXTOS DA PÁGINA INICIAL -->
+            <div id="tab-textos" class="admin-tab-content hidden space-y-6">
+                
+                <!-- Upload Direto da Logo PNG/JPG -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Imagem da Logo (PNG Transparente / JPG)</h3>
+                    <p class="text-sm text-slate-600 mb-4">Selecione o arquivo da sua logo para aplicar no cabeçalho e no rodapé.</p>
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                        <div class="bg-brand-strict p-4 rounded-xl flex items-center justify-center min-w-[200px] h-20">
+                            <img id="admin-logo-preview" src="logo.png" alt="Prévia da Logo" class="max-h-12 w-auto object-contain">
+                        </div>
+                        <div class="space-y-2 flex-1">
+                            <input type="file" id="admin-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="block w-full text-sm text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#004d61] file:text-white hover:file:bg-[#003a49] cursor-pointer">
+                            <button type="button" id="remove-custom-logo-btn" class="text-xs text-slate-500 hover:text-red-600 underline cursor-pointer">Restaurar logo padrão</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Textos de Introdução</h3>
+                    <form id="admin-texts-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Título Principal</label>
+                            <input type="text" id="input-hero-title" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Texto de Descrição</label>
+                            <textarea id="input-hero-subtitle" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Texto do Botão Principal</label>
+                            <input type="text" id="input-hero-cta" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Imagem de Fundo do Início (Foto do Escritório ou URL)</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="text" id="input-hero-bg" placeholder="image_c08f0c.jpg ou https://..." class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]">
+                                <label class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#004d61]/10 text-[#004d61] hover:bg-[#004d61]/20 font-semibold text-sm cursor-pointer shrink-0">
+                                    <i data-lucide="image" class="w-4 h-4"></i>
+                                    <span>Enviar Foto</span>
+                                    <input type="file" id="input-hero-bg-file" accept="image/*" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-semibold text-sm cursor-pointer">
+                            Salvar Textos
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ABA 3: ENDEREÇO, MAPA E CONTATOS -->
+            <div id="tab-contato" class="admin-tab-content hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Dados da Empresa e Atendimento</h3>
+                    <form id="admin-contact-settings-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Telefone Fixo (Exibição)</label>
+                            <input type="text" id="input-phone" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp (Exibição)</label>
+                            <input type="text" id="input-whatsapp" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">E-mail de Contato</label>
+                            <input type="email" id="input-email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Link do Instagram</label>
+                            <input type="url" id="input-instagram" placeholder="https://instagram.com/suaempresa" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Horário de Funcionamento</label>
+                            <input type="text" id="input-hours" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Endereço Completo</label>
+                            <textarea id="input-address" rows="2" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Link Embed do Google Maps (src do iframe)</label>
+                            <input type="text" id="input-maps-embed" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Razão Social (Rodapé / LGPD)</label>
+                            <input type="text" id="input-legal-name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">CNPJ Oficial</label>
+                            <input type="text" id="input-cnpj" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        </div>
+                        <div class="md:col-span-2 pt-2 border-t border-slate-100">
+                            <h4 class="text-sm font-bold text-slate-900 mb-3">Diferenciais Operacionais (Faixa abaixo do Início)</h4>
+                            <div id="admin-differentials-inputs" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Gerado via JS -->
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-semibold text-sm cursor-pointer">
+                                Salvar Dados de Contato e Empresa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- ESTADO INICIAL E LÓGICA DO SISTEMA + ROTA #/admin                     -->
+    <!-- ===================================================================== -->
+    <script id="site-data-script">
+        // DADOS PADRÃO DO SITE (Podem ser editados pela rota #/admin)
+        const DEFAULT_SITE_DATA = {
+            logoDataUrl: 'logo.png',
+            heroBgUrl: 'image_c08f0c.jpg',
+            legalName: 'FaberMinas Distribuidora Ltda',
+            cnpj: '27.424.764/0001-60',
+            heroTitle: 'Distribuidora de materiais de higiene, limpeza e suprimentos',
+            heroSubtitle: 'Fornecemos soluções completas para empresas, comércios, condomínios e indústrias com estoque variado, preços competitivos e entrega ágil.',
+            heroCta: 'Venha conhecer nossos produtos',
+            differentials: [
+                { icon: 'truck', title: 'Entrega Própria', desc: 'Logística ágil em BH e Região Metropolitana' },
+                { icon: 'building-2', title: 'Atendimento Corporativo', desc: 'Faturamento para empresas, condomínios e CNPJ' },
+                { icon: 'package-check', title: 'Pronta Entrega', desc: 'Estoque variado com reposição constante' },
+                { icon: 'headphones', title: 'Cotação Rápida', desc: 'Suporte comercial direto pelo WhatsApp' }
+            ],
+            address: 'R. dos Arquitetos, 408 — Alípio de Melo\nBelo Horizonte - MG, CEP 30840-160',
+            hours: 'Segunda a Sexta: 08h00 às 18h00',
+            phone: '(31) 3333-4455',
+            whatsapp: '(31) 99999-8877',
+            email: 'contato@faberminas.com.br',
+            instagram: 'https://instagram.com/faberminas',
+            mapsEmbed: 'https://maps.google.com/maps?q=R.%20dos%20Arquitetos,%20408%20-%20Al%C3%ADpio%20de%20Melo,%20Belo%20Horizonte%20-%20MG,%2030840-160&t=&z=16&ie=UTF8&iwloc=&output=embed',
+            categories: [
+                { id: 'higiene', label: 'Higiene', icon: 'sparkles', desc: 'Papéis e sabonetes' },
+                { id: 'limpeza', label: 'Limpeza', icon: 'droplets', desc: 'Químicos e acessórios' },
+                { id: 'descartaveis', label: 'Descartáveis', icon: 'cup-soda', desc: 'Copos, sacos e luvas' },
+                { id: 'escritorio', label: 'Escritório', icon: 'briefcase', desc: 'Papelaria e expediente' }
+            ],
+            products: [
+                { id: 1, name: 'Papel Toalha Interfolhado Branco', category: 'higiene', spec: 'Fardo com 1.000 folhas • 100% Celulose Virgem', image: '' },
+                { id: 2, name: 'Sabonete Líquido Perolado Erva-Doce', category: 'higiene', spec: 'Bombona 5 Litros • pH Neutro Institucional', image: '' },
+                { id: 3, name: 'Papel Higiênico Rolão Institucional', category: 'higiene', spec: 'Fardo com 8 rolos de 300m • Folha Simples', image: '' },
+                { id: 4, name: 'Detergente Neutro Concentrado', category: 'limpeza', spec: 'Galão 5 Litros • Alto rendimento', image: '' },
+                { id: 5, name: 'Desinfetante Bactericida Lavanda', category: 'limpeza', spec: 'Galão 5 Litros • Ação germicida', image: '' },
+                { id: 6, name: 'Água Sanitária Uso Geral', category: 'limpeza', spec: 'Galão 5 Litros • Teor de cloro ativo 2,0% a 2,5%', image: '' },
+                { id: 7, name: 'Copo Descartável Água 200ml', category: 'descartaveis', spec: 'Caixa com 2.500 unidades (25 tiras de 100)', image: '' },
+                { id: 8, name: 'Saco para Lixo Preto Reforçado 100L', category: 'descartaveis', spec: 'Fardo com 100 unidades • Alta resistência', image: '' },
+                { id: 9, name: 'Luva Nitrílica Sem Talco Azul', category: 'descartaveis', spec: 'Caixa com 100 unidades • Tamanhos P/M/G', image: '' },
+                { id: 10, name: 'Papel Sulfite A4 75g Branco', category: 'escritorio', spec: 'Caixa com 10 resmas (5.000 folhas)', image: '' },
+                { id: 11, name: 'Caixa Arquivo Morto Polionda', category: 'escritorio', spec: 'Pacote com 10 unidades • Plástico resistente', image: '' },
+                { id: 12, name: 'Fita Adesiva Transparente', category: 'escritorio', spec: 'Pacote com 5 rolos • 45mm x 45m', image: '' }
+            ]
+        };
+    </script>
+
+    <script>
+        const STORAGE_KEY = 'faberminas_site_data_v2';
+        let siteData = loadSiteData();
+        let activeCategory = 'todos';
+        let searchQuery = '';
+        let showAllProducts = false;
+        let isAdminAuthenticated = false;
+        let quoteCart = [];
+
+        function loadSiteData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return {
+                        ...DEFAULT_SITE_DATA,
+                        ...parsed,
+                        differentials: parsed.differentials || DEFAULT_SITE_DATA.differentials
+                    };
+                }
+            } catch (e) {
+                console.error('Erro ao ler dados locais:', e);
+            }
+            return JSON.parse(JSON.stringify(DEFAULT_SITE_DATA));
+        }
+
+        function saveSiteData(message = 'Alterações salvas com sucesso!') {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(siteData));
+                applyDataToPublicSite();
+                renderAdminUI();
+                showAdminToast(message);
+            } catch (e) {
+                showAdminToast('Aviso: Imagem muito pesada para salvar localmente. Use uma imagem menor.');
+            }
+        }
+
+        function onlyDigits(str) {
+            return (str || '').replace(/\D/g, '');
+        }
+
+        function applyDataToPublicSite() {
+            const logoSrc = siteData.logoDataUrl || 'logo.png';
+            const headerLogo = document.getElementById('header-logo-img');
+            const footerLogo = document.getElementById('footer-logo-img');
+            const headerFallback = document.getElementById('header-logo-fallback');
+            const footerFallback = document.getElementById('footer-logo-fallback');
+
+            if (headerLogo) {
+                headerLogo.classList.remove('hidden');
+                if (headerFallback) headerFallback.classList.add('hidden');
+                headerLogo.src = logoSrc;
+            }
+            if (footerLogo) {
+                footerLogo.classList.remove('hidden');
+                if (footerFallback) footerFallback.classList.add('hidden');
+                footerLogo.src = logoSrc;
+            }
+
+            document.getElementById('display-hero-title').textContent = siteData.heroTitle;
+            document.getElementById('display-hero-subtitle').textContent = siteData.heroSubtitle;
+            document.querySelector('#display-hero-cta span').textContent = siteData.heroCta;
+            const heroBgEl = document.getElementById('display-hero-bg');
+            if (heroBgEl) {
+                const bgSrc = siteData.heroBgUrl !== undefined ? siteData.heroBgUrl : DEFAULT_SITE_DATA.heroBgUrl;
+                if (bgSrc) {
+                    delete heroBgEl.dataset.triedFallback;
+                    heroBgEl.src = bgSrc;
+                    heroBgEl.style.display = '';
+                } else {
+                    heroBgEl.style.display = 'none';
+                }
+            }
+
+            document.getElementById('display-address').textContent = siteData.address;
+            document.getElementById('footer-address').textContent = siteData.address;
+            document.getElementById('display-hours').textContent = siteData.hours;
+
+            const mapsSearchUrl = `https://maps.google.com/?q=${encodeURIComponent(siteData.address.replace(/\n/g, ', '))}`;
+            document.getElementById('display-maps-link').href = mapsSearchUrl;
+            document.getElementById('display-maps-embed').src = siteData.mapsEmbed;
+
+            const phoneDigits = onlyDigits(siteData.phone);
+            const whatsDigits = onlyDigits(siteData.whatsapp);
+            const whatsFull = whatsDigits.startsWith('55') ? whatsDigits : `55${whatsDigits}`;
+
+            document.getElementById('display-phone-text').textContent = siteData.phone;
+            document.getElementById('display-phone-card').href = `tel:+55${phoneDigits}`;
+            document.getElementById('footer-phone-btn').href = `tel:+55${phoneDigits}`;
+
+            document.getElementById('display-whatsapp-text').textContent = siteData.whatsapp;
+            document.getElementById('display-whatsapp-card').href = `https://wa.me/${whatsFull}?text=${encodeURIComponent('Olá! Gostaria de falar com a FaberMinas.')}`;
+            document.getElementById('footer-whatsapp-btn').href = `https://wa.me/${whatsFull}?text=${encodeURIComponent('Olá! Vim pelo site da FaberMinas.')}`;
+            const floatingWa = document.getElementById('floating-whatsapp-btn');
+            if (floatingWa) {
+                floatingWa.href = `https://wa.me/${whatsFull}?text=${encodeURIComponent('Olá! Gostaria de solicitar atendimento da FaberMinas.')}`;
+            }
+
+            document.getElementById('display-email-text').textContent = siteData.email;
+            document.getElementById('display-email-card').href = `mailto:${siteData.email}`;
+            document.getElementById('footer-email-btn').href = `mailto:${siteData.email}`;
+            const footerInstaBtn = document.getElementById('footer-instagram-btn');
+            if (footerInstaBtn) {
+                footerInstaBtn.href = siteData.instagram || 'https://instagram.com';
+            }
+
+            const legalName = siteData.legalName || 'FaberMinas Distribuidora Ltda';
+            const cnpj = siteData.cnpj || '27.424.764/0001-60';
+            const fiscalEl = document.getElementById('footer-fiscal-info');
+            if (fiscalEl) fiscalEl.textContent = `${legalName} • CNPJ: ${cnpj}`;
+            const privLegal = document.getElementById('privacy-legal-name');
+            const privCnpj = document.getElementById('privacy-cnpj');
+            if (privLegal) privLegal.textContent = legalName;
+            if (privCnpj) privCnpj.textContent = `CNPJ: ${cnpj}`;
+
+            renderDifferentials();
+            renderCategoryCards();
+            renderProducts();
+            updateQuoteCartUI();
+        }
+
+        function renderDifferentials() {
+            const grid = document.getElementById('differentials-grid');
+            if (!grid) return;
+            const diffs = siteData.differentials || DEFAULT_SITE_DATA.differentials;
+            grid.innerHTML = diffs.map(item => `
+                <div class="flex items-start gap-3.5 p-5 rounded-2xl bg-white border border-white/20 shadow-md">
+                    <div class="w-10 h-10 rounded-xl bg-brand-strict text-white flex items-center justify-center shrink-0">
+                        <i data-lucide="${item.icon || 'check'}" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-sm sm:text-base">${item.title}</h2>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-0.5 leading-snug">${item.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Renderiza os filtros de categorias de forma leve e compacta
+        function renderCategoryCards() {
+            const container = document.getElementById('category-cards');
+            const subtitleEl = document.getElementById('active-category-subtitle');
+            const allCats = [
+                { id: 'todos', label: 'Todos', icon: 'layout-grid', desc: 'Todos os segmentos disponíveis' },
+                ...siteData.categories
+            ];
+
+            const currentObj = allCats.find(c => c.id === activeCategory);
+            if (subtitleEl && currentObj) {
+                subtitleEl.textContent = currentObj.desc ? `${currentObj.label}: ${currentObj.desc}` : currentObj.label;
+            }
+
+            container.innerHTML = allCats.map(cat => {
+                const isSelected = activeCategory === cat.id;
+                const btnClass = isSelected
+                    ? 'bg-brand-strict text-white border-brand-strict shadow-xs'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-brand-strict hover:text-brand-strict';
+
+                return `
+                    <button type="button" data-category="${cat.id}" class="category-btn btn-anim inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium cursor-pointer ${btnClass}">
+                        <i data-lucide="${cat.icon || 'tag'}" class="w-4 h-4 icon-pop"></i>
+                        <span>${cat.label}</span>
+                    </button>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeCategory = btn.getAttribute('data-category');
+                    showAllProducts = false;
+                    renderCategoryCards();
+                    renderProducts();
+                });
+            });
+
+            lucide.createIcons();
+        }
+
+        // Renderiza os produtos filtrados com respiro visual
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            const emptyState = document.getElementById('empty-state');
+            const countEl = document.getElementById('results-count');
+            const toggleWrap = document.getElementById('toggle-all-products-wrap');
+            const toggleLabel = document.getElementById('toggle-all-products-label');
+            const toggleIcon = document.getElementById('toggle-all-products-icon');
+            const q = searchQuery.trim().toLowerCase();
+
+            const filtered = siteData.products.filter(p => {
+                const matchCat = activeCategory === 'todos' || p.category === activeCategory;
+                const matchSearch = !q || p.name.toLowerCase().includes(q) || p.spec.toLowerCase().includes(q);
+                return matchCat && matchSearch;
+            });
+
+            const INITIAL_LIMIT = 8;
+            const shouldLimit = activeCategory === 'todos' && !q && !showAllProducts && filtered.length > INITIAL_LIMIT;
+            const visibleProducts = shouldLimit ? filtered.slice(0, INITIAL_LIMIT) : filtered;
+
+            countEl.textContent = filtered.length === 1
+                ? '1 produto'
+                : shouldLimit
+                    ? `Mostrando ${visibleProducts.length} de ${filtered.length} produtos`
+                    : `${filtered.length} produtos`;
+
+            if (toggleWrap) {
+                if (activeCategory === 'todos' && !q && filtered.length > INITIAL_LIMIT) {
+                    toggleWrap.classList.remove('hidden');
+                    if (toggleLabel) {
+                        toggleLabel.textContent = showAllProducts
+                            ? 'Mostrar menos'
+                            : `Ver todos os ${filtered.length} produtos`;
+                    }
+                    if (toggleIcon) {
+                        toggleIcon.setAttribute('data-lucide', showAllProducts ? 'chevron-up' : 'chevron-down');
+                    }
+                } else {
+                    toggleWrap.classList.add('hidden');
+                }
+            }
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = visibleProducts.map(product => {
+                const catObj = siteData.categories.find(c => c.id === product.category);
+                const catName = catObj ? catObj.label : product.category;
+                const inCart = quoteCart.find(item => item.id === product.id);
+                const btnLabel = inCart ? `Na cotação (${inCart.qty}x)` : 'Cotar item';
+                const btnStyle = inCart
+                    ? 'bg-[#003a49] text-white'
+                    : 'bg-brand-strict bg-brand-strict-hover text-white';
+
+                const imageHtml = product.image
+                    ? `<img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain p-3">`
+                    : `<div class="w-12 h-12 rounded-xl bg-slate-50 text-brand-strict flex items-center justify-center">
+                           <i data-lucide="package" class="w-6 h-6"></i>
+                       </div>`;
+
+                return `
+                    <article class="animate-fade-in bg-white rounded-2xl border border-slate-200/90 hover:border-brand-strict/50 transition flex flex-col justify-between overflow-hidden">
+                        <div>
+                            <div class="h-32 bg-white border-b border-slate-100 flex items-center justify-center relative">
+                                <span class="absolute top-2.5 left-2.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                    ${catName}
+                                </span>
+                                ${imageHtml}
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-slate-900 text-sm sm:text-base leading-snug mb-1">${product.name}</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">${product.spec}</p>
+                            </div>
+                        </div>
+                        <div class="px-4 pb-4">
+                            <button type="button" onclick="addToQuoteCart(${product.id})" class="btn-anim w-full py-2 px-3 rounded-xl ${btnStyle} font-medium text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i data-lucide="${inCart ? 'check' : 'plus'}" class="w-3.5 h-3.5 icon-pop"></i>
+                                <span>${btnLabel}</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // =====================================================================
+        // CESTA DE COTAÇÃO (ORÇAMENTO MÚLTIPLO)
+        // =====================================================================
+        window.addToQuoteCart = function(productId) {
+            const product = siteData.products.find(p => p.id === productId);
+            if (!product) return;
+            const existing = quoteCart.find(i => i.id === productId);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                quoteCart.push({ id: product.id, name: product.name, spec: product.spec, qty: 1 });
+            }
+            updateQuoteCartUI();
+            renderProducts();
+            openQuoteDrawer();
+        };
+
+        window.changeQuoteQty = function(productId, delta) {
+            const idx = quoteCart.findIndex(i => i.id === productId);
+            if (idx === -1) return;
+            quoteCart[idx].qty += delta;
+            if (quoteCart[idx].qty <= 0) {
+                quoteCart.splice(idx, 1);
+            }
+            updateQuoteCartUI();
+            renderProducts();
+        };
+
+        window.removeFromQuoteCart = function(productId) {
+            quoteCart = quoteCart.filter(i => i.id !== productId);
+            updateQuoteCartUI();
+            renderProducts();
+        };
+
+        window.clearQuoteCart = function() {
+            quoteCart = [];
+            updateQuoteCartUI();
+            renderProducts();
+        };
+
+        window.openQuoteDrawer = function() {
+            document.getElementById('quote-drawer-backdrop').classList.remove('hidden');
+            document.getElementById('quote-drawer').classList.remove('translate-x-full');
+        };
+
+        window.closeQuoteDrawer = function() {
+            document.getElementById('quote-drawer-backdrop').classList.add('hidden');
+            document.getElementById('quote-drawer').classList.add('translate-x-full');
+        };
+
+        function updateQuoteCartUI() {
+            const totalItems = quoteCart.reduce((acc, item) => acc + item.qty, 0);
+            const hBadge = document.getElementById('header-quote-badge');
+            const mBadge = document.getElementById('mobile-quote-badge');
+            if (hBadge) hBadge.textContent = totalItems;
+            if (mBadge) mBadge.textContent = totalItems;
+
+            const body = document.getElementById('quote-drawer-body');
+            const footer = document.getElementById('quote-drawer-footer');
+            if (!body || !footer) return;
+
+            if (quoteCart.length === 0) {
+                footer.classList.add('hidden');
+                body.innerHTML = `
+                    <div class="text-center py-12 px-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                        </div>
+                        <p class="font-semibold text-slate-800 text-base">Sua cesta de cotação está vazia</p>
+                        <p class="text-sm text-slate-500 mt-1">Clique em "Adicionar à cotação" nos produtos para montar sua lista de orçamento.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            footer.classList.remove('hidden');
+            body.innerHTML = quoteCart.map(item => `
+                <div class="p-3.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold text-slate-900 text-sm leading-snug">${item.name}</p>
+                        <p class="text-xs text-slate-500 truncate mt-0.5">${item.spec}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="changeQuoteQty(${item.id}, -1)" class="w-7 h-7 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-sm cursor-pointer">-</button>
+                        <span class="w-7 text-center text-sm font-bold text-slate-900">${item.qty}</span>
+                        <button type="button" onclick="changeQuoteQty(${item.id}, 1)" class="w-7 h-7 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-sm cursor-pointer">+</button>
+                        <button type="button" onclick="removeFromQuoteCart(${item.id})" class="ml-1 p-1.5 text-slate-400 hover:text-red-600 cursor-pointer" aria-label="Remover item">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function buildQuoteMessageText() {
+            const lines = quoteCart.map(item => `• ${item.qty}x ${item.name} (${item.spec})`);
+            return `Olá, FaberMinas! Gostaria de solicitar uma cotação para os seguintes itens:\n\n${lines.join('\n')}\n\nAguardo retorno.`;
+        }
+
+        window.sendQuoteViaWhatsApp = function() {
+            if (quoteCart.length === 0) return;
+            const whatsDigits = onlyDigits(siteData.whatsapp);
+            const whatsFull = whatsDigits.startsWith('55') ? whatsDigits : `55${whatsDigits}`;
+            const text = buildQuoteMessageText();
+            window.open(`https://wa.me/${whatsFull}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+        };
+
+        window.fillContactWithQuote = function() {
+            if (quoteCart.length === 0) return;
+            const msg = document.getElementById('contact-message');
+            const contactSec = document.getElementById('contato');
+            if (msg) msg.value = buildQuoteMessageText();
+            closeQuoteDrawer();
+            if (contactSec) contactSec.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.openPrivacyModal = function(e) {
+            if (e) e.preventDefault();
+            try {
+                history.replaceState(null, '', '#/privacidade');
+            } catch (err) {
+                window.location.hash = '/privacidade';
+            }
+            document.getElementById('privacy-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closePrivacyModal = function() {
+            document.getElementById('privacy-modal').classList.add('hidden');
+            if (window.location.hash === '#/privacidade' || window.location.hash === '#privacidade') {
+                try {
+                    history.replaceState(null, '', '#/');
+                } catch (err) {
+                    window.location.hash = '';
+                }
+            }
+        };
+
+        // =====================================================================
+        // ROTEAMENTO (#/ vs #/admin vs #/privacidade)
+        // =====================================================================
+        window.abrirAdmin = function(e) {
+            if (e) e.preventDefault();
+            try {
+                history.replaceState(null, '', '#/admin');
+            } catch (err) {
+                window.location.hash = '/admin';
+            }
+            mostrarTelaAdmin();
+        };
+
+        window.voltarParaSite = function(e) {
+            if (e) e.preventDefault();
+            try {
+                history.replaceState(null, '', '#/');
+            } catch (err) {
+                window.location.hash = '';
+            }
+            mostrarTelaPublica();
+        };
+
+        function mostrarTelaAdmin() {
+            document.getElementById('public-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            window.scrollTo(0, 0);
+            if (isAdminAuthenticated) {
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                renderAdminUI();
+            } else {
+                document.getElementById('admin-login-box').classList.remove('hidden');
+                document.getElementById('admin-dashboard').classList.add('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function mostrarTelaPublica() {
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('public-view').classList.remove('hidden');
+            applyDataToPublicSite();
+            lucide.createIcons();
+        }
+
+        function handleRoute() {
+            const hash = window.location.hash;
+            if (hash === '#/admin' || hash === '#admin') {
+                mostrarTelaAdmin();
+            } else if (hash === '#/privacidade' || hash === '#privacidade') {
+                mostrarTelaPublica();
+                document.getElementById('privacy-modal').classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                document.getElementById('privacy-modal').classList.add('hidden');
+                mostrarTelaPublica();
+            }
+        }
+
+        window.addEventListener('hashchange', handleRoute);
+
+        // Atalho de teclado oculto (Ctrl + Shift + A) para abrir o painel de edição no Preview
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                abrirAdmin();
+            }
+        });
+
+        // =====================================================================
+        // LÓGICA DO PAINEL ADMIN (#/admin)
+        // =====================================================================
+        document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('admin-password-input').value.trim();
+            if (pass === 'faber2026') {
+                isAdminAuthenticated = true;
+                document.getElementById('admin-login-error').classList.add('hidden');
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                renderAdminUI();
+            } else {
+                document.getElementById('admin-login-error').classList.remove('hidden');
+            }
+        });
+
+        // Navegação entre abas do Admin
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-tab');
+                document.querySelectorAll('.admin-tab-btn').forEach(b => {
+                    b.classList.remove('bg-[#004d61]', 'text-white');
+                    b.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+                });
+                btn.classList.add('bg-[#004d61]', 'text-white');
+                btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+
+                document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+
+        function renderAdminUI() {
+            // Preenche Select de categorias no form de produto
+            const catSelect = document.getElementById('prod-category');
+            catSelect.innerHTML = siteData.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+
+            // Lista produtos no admin
+            document.getElementById('admin-prod-count').textContent = siteData.products.length;
+            const listEl = document.getElementById('admin-products-list');
+            listEl.innerHTML = siteData.products.map(p => {
+                const cat = siteData.categories.find(c => c.id === p.category);
+                return `
+                    <div class="py-3.5 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-5 h-5 text-[#004d61]"></i>`}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-semibold text-slate-900 text-sm truncate">${p.name}</p>
+                                <p class="text-xs text-slate-500 truncate">${cat ? cat.label : p.category} • ${p.spec}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" onclick="editProductAdmin(${p.id})" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-[#004d61] text-xs font-semibold text-slate-700 cursor-pointer">Editar</button>
+                            <button type="button" onclick="deleteProductAdmin(${p.id})" class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-xs font-semibold text-red-600 cursor-pointer">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Lista categorias no admin
+            const catListEl = document.getElementById('admin-categories-list');
+            catListEl.innerHTML = siteData.categories.map(c => `
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 text-sm text-slate-800">
+                    <span class="font-semibold">${c.label}</span>
+                    <span class="text-xs text-slate-500">(${c.desc})</span>
+                    <button type="button" onclick="deleteCategoryAdmin('${c.id}')" class="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer" title="Remover categoria">×</button>
+                </div>
+            `).join('');
+
+            // Preenche campos de texto e contato
+            const adminLogoPrev = document.getElementById('admin-logo-preview');
+            if (adminLogoPrev) {
+                adminLogoPrev.src = siteData.logoDataUrl || 'logo.png';
+            }
+
+            document.getElementById('input-hero-title').value = siteData.heroTitle;
+            document.getElementById('input-hero-subtitle').value = siteData.heroSubtitle;
+            document.getElementById('input-hero-cta').value = siteData.heroCta;
+            const inputHeroBg = document.getElementById('input-hero-bg');
+            if (inputHeroBg) {
+                inputHeroBg.value = siteData.heroBgUrl !== undefined ? siteData.heroBgUrl : DEFAULT_SITE_DATA.heroBgUrl;
+            }
+
+            document.getElementById('input-phone').value = siteData.phone;
+            document.getElementById('input-whatsapp').value = siteData.whatsapp;
+            document.getElementById('input-email').value = siteData.email;
+            const inputInsta = document.getElementById('input-instagram');
+            if (inputInsta) {
+                inputInsta.value = siteData.instagram || 'https://instagram.com/faberminas';
+            }
+            document.getElementById('input-hours').value = siteData.hours;
+            document.getElementById('input-address').value = siteData.address;
+            document.getElementById('input-maps-embed').value = siteData.mapsEmbed;
+            document.getElementById('input-legal-name').value = siteData.legalName || 'FaberMinas Distribuidora Ltda';
+            document.getElementById('input-cnpj').value = siteData.cnpj || '27.424.764/0001-60';
+
+            const diffContainer = document.getElementById('admin-differentials-inputs');
+            if (diffContainer) {
+                const diffs = siteData.differentials || DEFAULT_SITE_DATA.differentials;
+                diffContainer.innerHTML = diffs.map((d, idx) => `
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                        <input type="text" data-diff-title="${idx}" value="${d.title}" placeholder="Título do diferencial" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold">
+                        <input type="text" data-diff-desc="${idx}" value="${d.desc}" placeholder="Descrição curta" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                `).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        // Salvar Produto (Novo ou Edição) com compressão automática de imagem para não estourar memória
+        document.getElementById('admin-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-product-id').value;
+            const name = document.getElementById('prod-name').value.trim();
+            const category = document.getElementById('prod-category').value;
+            const spec = document.getElementById('prod-spec').value.trim();
+            const urlInput = document.getElementById('prod-image-url').value.trim();
+            const fileInput = document.getElementById('prod-image-file').files[0];
+
+            let imageBase64 = urlInput;
+            if (fileInput) {
+                imageBase64 = await compressImageToDataURL(fileInput, 720, 0.82);
+            } else if (editId && !urlInput) {
+                const existing = siteData.products.find(p => p.id === Number(editId));
+                if (existing) imageBase64 = existing.image;
+            }
+
+            if (editId) {
+                const idx = siteData.products.findIndex(p => p.id === Number(editId));
+                if (idx > -1) {
+                    siteData.products[idx] = { id: Number(editId), name, category, spec, image: imageBase64 };
+                }
+            } else {
+                const newId = Date.now();
+                siteData.products.unshift({ id: newId, name, category, spec, image: imageBase64 });
+            }
+
+            resetProductForm();
+            saveSiteData('Produto salvo!');
+        });
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function compressImageToDataURL(file, maxWidth = 720, quality = 0.82) {
+            return new Promise((resolve) => {
+                if (file.type === 'image/svg+xml') {
+                    return readFileAsDataURL(file).then(resolve);
+                }
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                        resolve(canvas.toDataURL(outputType, quality));
+                    };
+                    img.onerror = () => resolve(event.target.result);
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.editProductAdmin = function(id) {
+            const prod = siteData.products.find(p => p.id === id);
+            if (!prod) return;
+            document.getElementById('edit-product-id').value = prod.id;
+            document.getElementById('prod-name').value = prod.name;
+            document.getElementById('prod-category').value = prod.category;
+            document.getElementById('prod-spec').value = prod.spec;
+            document.getElementById('prod-image-url').value = prod.image && !prod.image.startsWith('data:') ? prod.image : '';
+            document.getElementById('product-form-title').textContent = 'Editando Produto';
+            document.getElementById('cancel-edit-prod-btn').classList.remove('hidden');
+            document.getElementById('admin-product-form').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.deleteProductAdmin = function(id) {
+            siteData.products = siteData.products.filter(p => p.id !== id);
+            saveSiteData('Produto removido.');
+        };
+
+        function resetProductForm() {
+            document.getElementById('admin-product-form').reset();
+            document.getElementById('edit-product-id').value = '';
+            document.getElementById('product-form-title').textContent = 'Adicionar Novo Produto';
+            document.getElementById('cancel-edit-prod-btn').classList.add('hidden');
+        }
+
+        document.getElementById('cancel-edit-prod-btn').addEventListener('click', resetProductForm);
+
+        // Adicionar / Excluir Categoria
+        document.getElementById('admin-category-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const label = document.getElementById('new-cat-name').value.trim();
+            const desc = document.getElementById('new-cat-desc').value.trim();
+            if (!label) return;
+            const id = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+            if (!siteData.categories.some(c => c.id === id)) {
+                siteData.categories.push({ id, label, icon: 'tag', desc });
+                saveSiteData('Categoria adicionada!');
+            }
+            e.target.reset();
+        });
+
+        window.deleteCategoryAdmin = function(catId) {
+            if (siteData.categories.length <= 1) return;
+            siteData.categories = siteData.categories.filter(c => c.id !== catId);
+            saveSiteData('Categoria removida.');
+        };
+
+        // Upload da Logo PNG/JPG no Painel Admin
+        document.getElementById('admin-logo-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const dataUrl = await compressImageToDataURL(file, 800, 0.92);
+            siteData.logoDataUrl = dataUrl;
+            saveSiteData('Logo atualizada no cabeçalho e rodapé!');
+        });
+
+        document.getElementById('remove-custom-logo-btn').addEventListener('click', () => {
+            siteData.logoDataUrl = '';
+            document.getElementById('admin-logo-file').value = '';
+            saveSiteData('Logo restaurada.');
+        });
+
+        // Upload da Foto de Fundo do Escritório no Painel Admin
+        const heroBgFileInput = document.getElementById('input-hero-bg-file');
+        if (heroBgFileInput) {
+            heroBgFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const dataUrl = await compressImageToDataURL(file, 1600, 0.82);
+                siteData.heroBgUrl = dataUrl;
+                document.getElementById('input-hero-bg').value = dataUrl;
+                saveSiteData('Imagem de fundo do escritório atualizada!');
+            });
+        }
+
+        // Salvar Textos Iniciais
+        document.getElementById('admin-texts-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            siteData.heroTitle = document.getElementById('input-hero-title').value.trim();
+            siteData.heroSubtitle = document.getElementById('input-hero-subtitle').value.trim();
+            siteData.heroCta = document.getElementById('input-hero-cta').value.trim();
+            const inputHeroBg = document.getElementById('input-hero-bg');
+            if (inputHeroBg) {
+                siteData.heroBgUrl = inputHeroBg.value.trim();
+            }
+            saveSiteData('Textos da página inicial atualizados!');
+        });
+
+        // Salvar Contatos e Endereço
+        document.getElementById('admin-contact-settings-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            siteData.phone = document.getElementById('input-phone').value.trim();
+            siteData.whatsapp = document.getElementById('input-whatsapp').value.trim();
+            siteData.email = document.getElementById('input-email').value.trim();
+            const inputInsta = document.getElementById('input-instagram');
+            if (inputInsta) {
+                siteData.instagram = inputInsta.value.trim();
+            }
+            siteData.hours = document.getElementById('input-hours').value.trim();
+            siteData.address = document.getElementById('input-address').value.trim();
+            siteData.mapsEmbed = document.getElementById('input-maps-embed').value.trim();
+            siteData.legalName = document.getElementById('input-legal-name').value.trim();
+            siteData.cnpj = document.getElementById('input-cnpj').value.trim();
+
+            const titleInputs = document.querySelectorAll('[data-diff-title]');
+            const descInputs = document.querySelectorAll('[data-diff-desc]');
+            if (titleInputs.length > 0) {
+                const currentDiffs = siteData.differentials || DEFAULT_SITE_DATA.differentials;
+                siteData.differentials = Array.from(titleInputs).map((el, idx) => ({
+                    icon: currentDiffs[idx] ? currentDiffs[idx].icon : 'check',
+                    title: el.value.trim(),
+                    desc: descInputs[idx] ? descInputs[idx].value.trim() : ''
+                }));
+            }
+
+            saveSiteData('Dados de contato e empresa atualizados!');
+        });
+
+        // Exportar HTML Completo Atualizado para Hospedagem (Embute todas as fotos em Base64)
+        document.getElementById('download-html-btn').addEventListener('click', () => {
+            const docClone = document.documentElement.cloneNode(true);
+            // Garante que a view pública esteja visível no arquivo exportado
+            docClone.querySelector('#public-view').classList.remove('hidden');
+            docClone.querySelector('#admin-view').classList.add('hidden');
+            docClone.querySelector('#admin-login-box').classList.remove('hidden');
+            docClone.querySelector('#admin-dashboard').classList.add('hidden');
+            docClone.querySelector('#quote-drawer-backdrop').classList.add('hidden');
+            docClone.querySelector('#quote-drawer').classList.add('translate-x-full');
+            docClone.querySelector('#privacy-modal').classList.add('hidden');
+
+            // Atualiza os dados padrão dentro do script para ficarem fixos no HTML exportado
+            const dataScript = docClone.querySelector('#site-data-script');
+            dataScript.textContent = `\n        const DEFAULT_SITE_DATA = ${JSON.stringify(siteData, null, 4)};\n    `;
+
+            const finalHtml = '<!DOCTYPE html>\n' + docClone.outerHTML;
+            const blob = new Blob([finalHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            showAdminToast('Arquivo index.html baixado com todas as fotos embutidas!');
+        });
+
+        // Exportar e Importar Backup JSON entre dispositivos
+        document.getElementById('export-json-btn').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify(siteData, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'faberminas-backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showAdminToast('Backup JSON exportado!');
+        });
+
+        document.getElementById('import-json-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const imported = JSON.parse(reader.result);
+                    if (imported && imported.products) {
+                        siteData = { ...DEFAULT_SITE_DATA, ...imported };
+                        saveSiteData('Backup importado com sucesso!');
+                    }
+                } catch (err) {
+                    showAdminToast('Arquivo de backup inválido.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        // Restaurar dados originais
+        document.getElementById('reset-default-btn').addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            siteData = JSON.parse(JSON.stringify(DEFAULT_SITE_DATA));
+            renderAdminUI();
+            applyDataToPublicSite();
+            showAdminToast('Dados padrão restaurados.');
+        });
+
+        function showAdminToast(text) {
+            const toast = document.getElementById('admin-toast');
+            document.getElementById('admin-toast-text').textContent = text;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        // Busca e Menu Mobile
+        const searchInput = document.getElementById('product-search');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            clearSearchBtn.classList.toggle('hidden', searchQuery.length === 0);
+            renderProducts();
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            searchQuery = '';
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            renderProducts();
+        });
+
+        document.getElementById('reset-filters-btn').addEventListener('click', () => {
+            activeCategory = 'todos';
+            showAllProducts = false;
+            searchQuery = '';
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            renderCategoryCards();
+            renderProducts();
+        });
+
+        const toggleAllProductsBtn = document.getElementById('toggle-all-products-btn');
+        if (toggleAllProductsBtn) {
+            toggleAllProductsBtn.addEventListener('click', () => {
+                showAllProducts = !showAllProducts;
+                renderProducts();
+            });
+        }
+
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+        document.getElementById('contact-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fb = document.getElementById('form-feedback');
+            fb.classList.remove('hidden');
+            e.target.reset();
+            setTimeout(() => fb.classList.add('hidden'), 5000);
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            handleRoute();
+        });
+    </script>
+</body>
+</html>
