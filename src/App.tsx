@@ -43,7 +43,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const EXACT_LOGO_PATH = '/assets/aistudio/logo_d65a277a.png';
+const BASE = import.meta.env.BASE_URL || './';
+const CLEAN_BASE = BASE.endsWith('/') ? BASE : `${BASE}/`;
+const EXACT_LOGO_PATH = `${CLEAN_BASE}assets/aistudio/logo_d65a277a.png`;
 const STORAGE_KEY = 'faberminas_site_data_v2';
 
 interface Product {
@@ -421,7 +423,12 @@ export default function App() {
   );
 
   // Logo da marca garantida
-  const logoImageSrc = siteData.logoDataUrl || EXACT_LOGO_PATH;
+  const rawLogo = siteData.logoDataUrl || EXACT_LOGO_PATH;
+  const logoImageSrc = rawLogo.startsWith('data:') || rawLogo.startsWith('http')
+    ? rawLogo
+    : (rawLogo.startsWith('/') && !rawLogo.startsWith(CLEAN_BASE)
+      ? `${CLEAN_BASE}${rawLogo.replace(/^\/+/, '')}`
+      : rawLogo);
 
   // Visualização Admin
   const isAdminView = currentRoute === '#/admin' || currentRoute === '#admin';
