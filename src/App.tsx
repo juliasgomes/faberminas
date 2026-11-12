@@ -101,7 +101,7 @@ interface QuoteItem {
 const DEFAULT_SITE_DATA: SiteData = {
   logoDataUrl: EXACT_LOGO_PATH,
   heroBgUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1920&q=80',
-  legalName: 'FaberMinas Distribuidora Ltda',
+  legalName: 'Faberminas',
   cnpj: '27.424.764/0001-60',
   heroTitle: 'Distribuidora de materiais de higiene, limpeza e suprimentos',
   heroSubtitle:
@@ -219,6 +219,7 @@ export default function App() {
         return {
           ...DEFAULT_SITE_DATA,
           ...parsed,
+          legalName: (parsed.legalName && !parsed.legalName.includes('Distribuidora')) ? parsed.legalName : 'Faberminas',
           // Sempre garantir que se a logo salva for o placeholder antigo ou vazio, usar a imagem exata enviada
           logoDataUrl: parsed.logoDataUrl && parsed.logoDataUrl !== 'logo.png' ? parsed.logoDataUrl : EXACT_LOGO_PATH,
           differentials: parsed.differentials || DEFAULT_SITE_DATA.differentials
@@ -273,6 +274,7 @@ export default function App() {
       }
       link.type = 'image/png';
       link.href = EMBEDDED_FAVICON;
+      document.title = 'Faberminas';
     } catch (e) {
       console.warn('Erro ao definir favicon dinâmico:', e);
     }
@@ -1883,7 +1885,7 @@ export default function App() {
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/80 text-center sm:text-left">
             <div className="space-y-1">
               <p className="text-xs text-white/75">{siteData.legalName} • CNPJ: {siteData.cnpj}</p>
-              <p>© 2026 FaberMinas. Todos os direitos reservados.</p>
+              <p>© 2026 Faberminas. Todos os direitos reservados.</p>
             </div>
             <button
               type="button"
