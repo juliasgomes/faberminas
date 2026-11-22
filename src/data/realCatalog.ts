@@ -1,0 +1,1838 @@
+import { Category, Product } from "../types";
+
+export const REAL_CATEGORIES: Category[] = [
+  { id: "limpeza", label: "Limpeza", icon: "droplets", desc: "Rodos, vassouras, panos, fibras e acessórios de higienização" },
+  { id: "higiene-pessoal", label: "Higiene Pessoal", icon: "sparkles", desc: "Sabonetes, luvas descartáveis, cremes e cuidados pessoais" },
+  { id: "hospitalar", label: "Hospitalar", icon: "stethoscope", desc: "Aventais TNT, compressas estéreis, imobilização e insumos clínicos" },
+  { id: "higiene-absorventes", label: "Higiene & Absorventes", icon: "shield-check", desc: "Fraldas infantis, geriátricas e absorventes higiênicos" },
+  { id: "ferramentas", label: "Ferramentas", icon: "wrench", desc: "Baldes graduados, capas para caixa d'água e ferramentas manuais" },
+  { id: "epi", label: "EPI", icon: "hard-hat", desc: "Equipamentos de proteção individual e óculos de segurança" },
+  { id: "embalagens", label: "Embalagens", icon: "package", desc: "Caixas térmicas e berços protetores em isopor (EPS)" },
+  { id: "diversos", label: "Diversos", icon: "box", desc: "Caixas organizadoras, sacos de ráfia e suprimentos gerais" }
+];
+
+export interface SubTypeFilter {
+  id: string;
+  label: string;
+  match: (p: Product) => boolean;
+}
+
+const norm = (s: string) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+export const PRODUCT_SUBTYPE_FILTERS: SubTypeFilter[] = [
+  { id: "luva", label: "Luvas", match: (p) => /\bluva\b/.test(norm(p.name)) },
+  { id: "rodo", label: "Rodos", match: (p) => /\brodo\b/.test(norm(p.name)) },
+  { id: "fralda", label: "Fraldas", match: (p) => /\bfralda\b/.test(norm(p.name)) },
+  { id: "vassoura", label: "Vassouras & Vasculhos", match: (p) => /\b(vassoura|vassourao|vasculho)\b/.test(norm(p.name)) },
+  { id: "escova", label: "Escovas", match: (p) => /\bescova\b/.test(norm(p.name)) },
+  { id: "pano-flanela", label: "Panos & Flanelas", match: (p) => /\b(pano|flanela)\b/.test(norm(p.name)) },
+  { id: "esponja-fibra", label: "Esponjas, Fibras & Palha de Aço", match: (p) => /\b(esponja|fibra|palha de aco)\b/.test(norm(p.name)) },
+  { id: "lixeira-pa", label: "Lixeiras & Pás de Lixo", match: (p) => /\b(lixeira|pa de lixo)\b/.test(norm(p.name)) },
+  { id: "sabonete-sabao", label: "Sabonetes & Sabão", match: (p) => /\b(sabonete|sabao|saponaceo)\b/.test(norm(p.name)) },
+  { id: "desentupidor", label: "Desentupidores", match: (p) => /\bdesentupidor\b/.test(norm(p.name)) },
+  { id: "disco", label: "Discos p/ Enceradeira", match: (p) => /\bdisco\b/.test(norm(p.name)) },
+  { id: "mop", label: "Mops & Refis", match: (p) => /\bmop\b/.test(norm(p.name)) },
+  { id: "cabo", label: "Cabos & Extensores", match: (p) => /^(cabo|prolongador)\b/.test(norm(p.name)) },
+  { id: "balde", label: "Baldes", match: (p) => /\bbalde\b/.test(norm(p.name)) },
+  { id: "capa", label: "Capas Caixa d'Água", match: (p) => /^capa\b/.test(norm(p.name)) },
+  { id: "absorvente", label: "Absorventes", match: (p) => /\babsorvente\b/.test(norm(p.name)) },
+  { id: "avental-touca", label: "Aventais & Toucas TNT", match: (p) => /\b(avental|touca)\b/.test(norm(p.name)) },
+  { id: "compressa", label: "Compressas & Curativos", match: (p) => /\b(compressa|malha tubular)\b/.test(norm(p.name)) },
+  { id: "mamadeira-bico", label: "Mamadeiras & Bicos", match: (p) => /^(mamadeira|bico|chupeta)\b/.test(norm(p.name)) },
+  { id: "tala-colar", label: "Talas & Colares Cervicais", match: (p) => /\b(tala|colar|splint)\b/.test(norm(p.name)) },
+  { id: "gelo-isopor", label: "Gelo Rígido & Isopor", match: (p) => /\b(gelo|isopor)\b/.test(norm(p.name)) },
+  { id: "shampoo-cuidado", label: "Shampoos, Cremes & Pessoais", match: (p) => /\b(shampoo|condicionador|creme|desodorante|repelente|protetor|cortador|haste|aparelho|fio dental|banheira)\b/.test(norm(p.name)) },
+  { id: "oculos", label: "Óculos de Proteção", match: (p) => /\boculos\b/.test(norm(p.name)) },
+  { id: "ferramenta-manual", label: "Ferramentas Manuais", match: (p) => /\b(martelo|arco de serra|trena|camara de ar)\b/.test(norm(p.name)) }
+];
+
+interface RawCatalogEntry {
+  codigo: string;
+  nome: string;
+  categoria?: string;
+  medidas?: string;
+  especificacoes?: string;
+}
+
+const CATEGORY_MAP: Record<string, string> = {
+  "Higiene Pessoal": "higiene-pessoal",
+  "Limpeza": "limpeza",
+  "Hospitalar": "hospitalar",
+  "Ferramentas": "ferramentas",
+  "EPI": "epi",
+  "Higiene & Absorventes": "higiene-absorventes",
+  "Embalagens": "embalagens",
+  "Diversos": "diversos"
+};
+
+function cleanProductTitle(rawName: string): string {
+  let s = rawName.trim();
+  // 1. Remove sufixo de marca após " - Marca"
+  s = s.replace(/\s+-\s+[^-]+$/, "");
+  // 2. Remove marcas incorporadas ao nome
+  s = s.replace(/\b(?:Karicia|Incontinence|Medifral Plus|WiperPlus Pro60|Glutamax)\b/gi, "");
+  // 3. Remove medidas compostas (ex: 60x80cm, 7,5cm x 7,5cm, 120cm x 12m, 305 x 110 x 33mm)
+  s = s.replace(
+    /\b\d+(?:[.,]\d+)?\s*(?:cm|mm|m)?\s*x\s*\d+(?:[.,]\d+)?(?:\s*x\s*\d+(?:[.,]\d+)?)?\s*(?:cm|mm|m)?(?![A-Za-zÀ-ÿ])/gi,
+    ""
+  );
+  // 4. Remove quantidades de embalagem (Pct c/ 16un, Pote 360 Cápsulas, etc.)
+  s = s.replace(
+    /(?<![A-Za-zÀ-ÿ])(?:Pct\.?\s*c\/|Cartela\s*c\/|Pote|Lata|Bisnaga)\s*\d+\s*(?:un|unidades|Cápsulas|g|kg|m|ml)?(?![A-Za-zÀ-ÿ])/gi,
+    ""
+  );
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])Rolo\s*\d+(?:cm|m)?(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])c\/\s*\d+\s*(?:un|unidades)(?![A-Za-zÀ-ÿ])/gi, "");
+  // 5. Remove Base/Cabo/Haste com dimensões antes da remoção genérica de unidades
+  s = s.replace(/\bBase\s+Nº\s*\d+(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/\bBase\s+\d+(?:[.,]\d+)?\s*(?:cm|mm|m)(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/\bCabo\s+\d+(?:[.,]\d+)?\s*(?:cm|mm|m)(?![A-Za-zÀ-ÿ])/gi, "c/ Cabo");
+  s = s.replace(/\bHaste\s+\d+(?:[.,]\d+)?\s*(?:cm|mm|m)(?![A-Za-zÀ-ÿ])/gi, "");
+  // 6. Remove dimensões, volumes, pesos e especificações numéricas já presentes em Medidas/Especificações
+  s = s.replace(/\(\s*[\d.,]+\s*a\s*[\d.,]+\s*kg\s*\)/gi, "");
+  s = s.replace(/\b\d+\s*a\s*\d+\s*(?:ml|Meses|meses)(?![A-Za-zÀ-ÿ])/g, "");
+  s = s.replace(/\bFPS\s*\d+(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/\b100%\s*Algodão(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(
+    /\b\d+(?:[.,]\d+)?\s*(?:g\/m²|Litros|Litro|ml|kg|mm|cm|Microns|microns|UI|L)(?![A-Za-zÀ-ÿ])/g,
+    ""
+  );
+  s = s.replace(/\b\d+(?:[.,]\d+)?\s*m(?![A-Za-zÀ-ÿ])/g, "");
+  s = s.replace(/\b\d+(?:[.,]\d+)?g(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/\b11F(?![A-Za-zÀ-ÿ])/g, "");
+  s = s.replace(/\b\d+"(?![A-Za-zÀ-ÿ])/g, "");
+  // 7. Remove marcações de tamanho e limpeza final
+  s = s.replace(
+    /(?<![A-Za-zÀ-ÿ])(?:Tamanho|Tam\.?)\s+(?:Único|Única|Infantil|Neonatal|SEG|PP|EG|XG|P|M|G)(?:\s+(?:XG|P|M|G))?(?![A-Za-zÀ-ÿ])/gi,
+    ""
+  );
+  s = s.replace(/\bCapacidade\b/gi, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])(?:Neonatal|SEG|PP|EG|XG)(?![A-Za-zÀ-ÿ])/g, "");
+  s = s.replace(/\bCano\s+Médio\b/gi, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])s\/\s*Cabo(?![A-Za-zÀ-ÿ])/gi, "Sem Cabo");
+  s = s.replace(/\s+\b(?:P|M|G)\s*$/g, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])Rolo(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])Pct(?![A-Za-zÀ-ÿ])/gi, "");
+  s = s.replace(/(?<![A-Za-zÀ-ÿ])(?:p\/|c\/)\s*$/gi, "");
+  s = s.replace(/\s{2,}/g, " ").replace(/[\s\-\/,]+$/g, "").trim();
+  return s || rawName.trim();
+}
+
+function assignRooms(catId: string, rawNome: string): string[] {
+  const n = norm(rawNome);
+  const rooms = new Set<string>();
+
+  // Regra estrita: associar apenas quando pertence genuinamente ao cômodo (sem fallback forçado)
+  if (
+    n.includes("pano de prato") ||
+    (n.includes("esponja sintetica") && !n.includes("sanitaria") && !n.includes("banho")) ||
+    (n.includes("fibra sintetica") && !n.includes("vinil")) ||
+    n.includes("palha de aco") ||
+    n.includes("desentupidor de pia") ||
+    n.includes("lixeira plastica retangular") ||
+    n.includes("pasta para limpeza pesada")
+  ) {
+    rooms.add("cozinha");
+  }
+
+  if (
+    n.includes("vaso sanitario") ||
+    n.includes("desentupidor sanitario") ||
+    n.includes("desodorizador sanitario") ||
+    n.includes("esponja sanitaria") ||
+    n.includes("esponja para banho") ||
+    (n.includes("sabonete") && !n.includes("saboneteira")) ||
+    n.includes("creme dental") ||
+    n.includes("escova dental") ||
+    n.includes("fio dental") ||
+    n.includes("shampoo") ||
+    n.includes("condicionador") ||
+    n.includes("aparelho de barbear") ||
+    n.includes("cortador de unhas") ||
+    n.includes("haste flexivel") ||
+    n.includes("desodorante") ||
+    n.includes("escova limpeza das unhas")
+  ) {
+    rooms.add("banheiro");
+  }
+
+  if (
+    n.includes("lixeira escritorio") ||
+    n.includes("capacho") ||
+    n.includes("fibra vinil") ||
+    n.includes("caixa desmontavel") ||
+    n.includes("flanela de limpeza")
+  ) {
+    rooms.add("escritorio");
+  }
+
+  if (
+    n.includes("rodo") ||
+    n.includes("vassoura") ||
+    n.includes("vassourao") ||
+    n.includes("vasculho") ||
+    n.includes("pano de chao") ||
+    n.includes("balde") ||
+    n.includes("pa de lixo") ||
+    n.includes("mop") ||
+    n.includes("cabo de madeira") ||
+    n.includes("prolongador de cabo") ||
+    n.includes("escova de roupa") ||
+    n.includes("escova para roupa") ||
+    n.includes("disco enceradeira") ||
+    n.includes("sabao de coco") ||
+    n.includes("sabao em po") ||
+    n.includes("saponaceo") ||
+    n.includes("saco de rafia") ||
+    n.includes("capa caixa")
+  ) {
+    rooms.add("area-servico");
+  }
+
+  // Fraldas, absorventes, linha hospitalar, EPI, itens infantis e genéricos permanecem []
+  if (catId === "hospitalar" || catId === "higiene-absorventes" || catId === "epi") {
+    return [];
+  }
+
+  return Array.from(rooms);
+}
+
+function assignSegments(catId: string, rawNome: string): string[] {
+  const n = norm(rawNome);
+  const segs = new Set<string>();
+
+  if (
+    n.includes("vassourao") ||
+    n.includes("vassoura") ||
+    n.includes("rodo") ||
+    n.includes("pa de lixo") ||
+    n.includes("lixeira plastica cilindrica") ||
+    n.includes("capacho") ||
+    n.includes("fibra vinil") ||
+    n.includes("capa caixa") ||
+    n.includes("disco enceradeira") ||
+    n.includes("desodorizador sanitario") ||
+    n.includes("cabo de madeira") ||
+    n.includes("prolongador de cabo") ||
+    n.includes("saco de rafia") ||
+    n.includes("balde")
+  ) {
+    segs.add("condominios");
+  }
+
+  if (
+    n.includes("lixeira escritorio") ||
+    n.includes("flanela") ||
+    n.includes("capacho") ||
+    n.includes("caixa desmontavel") ||
+    n.includes("sabonete liquido") ||
+    n.includes("mop")
+  ) {
+    segs.add("escritorios");
+  }
+
+  if (
+    (catId === "hospitalar" && !n.includes("vitamina") && !n.includes("suplemento") && !n.includes("bico de mamadeira")) ||
+    n.includes("luva nitrilica") ||
+    n.includes("luva latex") ||
+    n.includes("luva de vinil") ||
+    n.includes("luva em eva") ||
+    n.includes("touca tnt") ||
+    n.includes("lenco banho de leito") ||
+    n.includes("fralda geriatrica") ||
+    n.includes("pos-operatorio")
+  ) {
+    segs.add("clinicas");
+  }
+
+  if (
+    n.includes("touca tnt") ||
+    n.includes("luva plastica pead") ||
+    n.includes("luva de vinil") ||
+    n.includes("luva nitrilica") ||
+    (n.includes("fibra sintetica") && !n.includes("vinil")) ||
+    (n.includes("esponja sintetica") && !n.includes("sanitaria") && !n.includes("banho")) ||
+    n.includes("palha de aco") ||
+    n.includes("pano de prato") ||
+    n.includes("pasta para limpeza pesada") ||
+    n.includes("lixeira plastica retangular") ||
+    n.includes("rodo")
+  ) {
+    segs.add("restaurantes");
+  }
+
+  if (
+    n.includes("pano de prato") ||
+    n.includes("pano de chao") ||
+    n.includes("flanela") ||
+    n.includes("esponja") ||
+    n.includes("palha de aco") ||
+    n.includes("vassoura") ||
+    n.includes("rodo") ||
+    n.includes("sabao") ||
+    n.includes("saponaceo") ||
+    n.includes("creme dental") ||
+    n.includes("escova dental") ||
+    n.includes("fio dental") ||
+    n.includes("shampoo") ||
+    n.includes("condicionador") ||
+    n.includes("desodorante") ||
+    n.includes("protetor solar") ||
+    n.includes("repelente") ||
+    n.includes("creme hidratante") ||
+    n.includes("aparelho de barbear") ||
+    n.includes("cortador de unhas") ||
+    n.includes("haste flexivel") ||
+    n.includes("fralda infantil") ||
+    n.includes("absorvente") ||
+    n.includes("mamadeira") ||
+    n.includes("chupeta") ||
+    n.includes("banheira") ||
+    n.includes("sabonete em tablete")
+  ) {
+    segs.add("residencial");
+  }
+
+  return Array.from(segs);
+}
+
+function buildAbout(catLabel: string, cleanName: string, rawName: string): string {
+  const n = norm(rawName);
+  if (n.includes("fralda geriatrica")) return `${cleanName} de alta absorção, projetado para oferecer conforto prolongado, segurança contra vazamentos e praticidade na troca diária.`;
+  if (n.includes("fralda")) return `${cleanName} com ajuste anatômico e toque macio, desenvolvido para manter a pele seca e protegida com máxima mobilidade.`;
+  if (n.includes("absorvente")) return `${cleanName} com cobertura suave e ótima capacidade de retenção para proteção discreta e segura ao longo do dia.`;
+  if (n.includes("luva")) return `${cleanName} que oferece barreira confiável de proteção para as mãos, garantindo tato, destreza e segurança durante o manuseio.`;
+  if (n.includes("rodo")) return `${cleanName} desenvolvido para escoamento eficiente de água e secagem uniforme de pisos sem deixar marcas.`;
+  if (n.includes("vassoura") || n.includes("vassourao") || n.includes("vasculho")) return `${cleanName} com cerdas resistentes para varrição eficiente de poeira, resíduos e sujidades em diferentes tipos de piso.`;
+  if (n.includes("mop")) return `${cleanName} prático para higienização rápida de pisos, reduzindo o esforço operacional e otimizando o consumo de água e químicos.`;
+  if (n.includes("pano") || n.includes("flanela")) return `${cleanName} de alta absorção e ótima resistência a lavagens frequentes, ideal para secar e dar acabamento sem riscar superfícies.`;
+  if (n.includes("esponja") || n.includes("fibra") || n.includes("palha de aco")) return `${cleanName} formulado para agilizar a remoção de gorduras, incrustações e sujeiras do dia a dia com alto rendimento.`;
+  if (n.includes("lixeira") || n.includes("pa de lixo")) return `${cleanName} resistente e funcional para coleta e acondicionamento higiênico de resíduos com praticidade no esvaziamento.`;
+  if (n.includes("sabonete") || n.includes("sabao") || n.includes("saponaceo") || n.includes("pasta para limpeza")) return `${cleanName} com formulação equilibrada para limpeza eficaz, promovendo higiene e remoção de sujidades sem agredir o ambiente.`;
+  if (n.includes("desentupidor")) return `${cleanName} de vedação eficiente, desenvolvido para desobstruir tubulações de forma mecânica, rápida e limpa.`;
+  if (n.includes("disco enceradeira")) return `${cleanName} de alta performance para acoplamento em enceradeiras industriais, garantindo tratamento uniforme de pisos.`;
+  if (n.includes("capa caixa")) return `${cleanName} com elástico perimetral para vedação segura de reservatórios contra poeira, insetos e detritos externos.`;
+  if (n.includes("balde")) return `${cleanName} reforçado para transporte e preparo de soluções de limpeza ou insumos de obra e manutenção.`;
+  if (n.includes("avental") || n.includes("touca") || n.includes("oculos") || n.includes("protetor facial")) return `${cleanName} voltado à proteção individual e controle sanitário em procedimentos, manipulação e operações técnicas.`;
+  if (n.includes("compressa") || n.includes("tala") || n.includes("colar") || n.includes("splint") || n.includes("malha") || n.includes("suporte de braco") || n.includes("quebrador")) return `${cleanName} de padrão técnico hospitalar, selecionado para oferecer segurança, precisão e confiabilidade em atendimentos clínicos.`;
+  return `${cleanName} pertencente à linha ${catLabel}, selecionado pela Faberminas para suprimento contínuo com excelente custo-benefício.`;
+}
+
+function buildDescription(rawName: string, catLabel: string, measures: string): string {
+  const n = norm(rawName);
+  const medidaInfo = measures && measures !== "Padrão comercial" ? ` Apresentado no formato ${measures}.` : "";
+
+  if (n.includes("fralda")) {
+    return `Indicado para cuidados de higiene em clínicas, instituições de longa permanência ou uso domiciliar.${medidaInfo} Recomenda-se verificar o ajuste elástico nas pernas e cintura após a colocação para garantir vedação completa e conforto contínuo.`;
+  }
+  if (n.includes("absorvente")) {
+    return `Recomendado para rotina diária ou cuidados pós-operatórios conforme necessidade de fluxo.${medidaInfo} Deve ser fixado firmemente à roupa íntima e substituído regularmente para manter a pele limpa e arejada.`;
+  }
+  if (n.includes("luva")) {
+    return `Aplicado em procedimentos de limpeza, manipulação de alimentos, estética, laboratórios e serviços gerais.${medidaInfo} Calçar sempre com as mãos secas e limpas; escolher o tamanho compatível evita rasgos e melhora o conforto durante o uso.`;
+  }
+  if (n.includes("rodo") || n.includes("mop") || n.includes("cabo") || n.includes("prolongador")) {
+    return `Voltado à manutenção e higienização de pisos frios, porcelanatos, áreas externas e corredores de alto tráfego.${medidaInfo} Após a lavagem, passe em movimentos contínuos em direção ao ralo e enxágue após o uso para preservar borracha, microfibra e rosca.`;
+  }
+  if (n.includes("vassoura") || n.includes("vassourao") || n.includes("vasculho")) {
+    return `Indicado para varrição interna ou externa em condomínios, comércios, galpões, escritórios e residências.${medidaInfo} Utilize o modelo adequado à rugosidade do piso e armazene com as cerdas livres de pressão para evitar deformação.`;
+  }
+  if (n.includes("pano") || n.includes("flanela")) {
+    return `Uso recomendado em bancadas, móveis, vidros, eletrodomésticos, cozinhas e pisos.${medidaInfo} Pode ser utilizado seco para remoção de pó ou levemente umedecido com solução limpadora; lavar separadamente após o uso preserva a capacidade de absorção.`;
+  }
+  if (n.includes("esponja") || n.includes("fibra") || n.includes("palha de aco")) {
+    return `Ideal para limpeza de utensílios, chapas, fogões, rejuntes e superfícies laváveis em copas, restaurantes e áreas domésticas.${medidaInfo} Teste previamente em superfícies polidas ou antiaderentes quando utilizar faces abrasivas.`;
+  }
+  if (n.includes("lixeira") || n.includes("pa de lixo")) {
+    return `Adequado para escritórios, sanitários, copas, áreas comuns de condomínios e consultórios.${medidaInfo} Utilize sacos de lixo compatíveis com a litragem para manter a estrutura protegida e facilitar a retirada diária dos resíduos.`;
+  }
+  if (n.includes("capa caixa")) {
+    return `Desenvolvido para reservatórios de água residenciais e condominiais.${medidaInfo} Posicione sobre a tampa encaixando o elástico por toda a borda externa, mantendo o reservatório vedado contra entrada de insetos e impurezas.`;
+  }
+  if (n.includes("disco enceradeira")) {
+    return `Para operação em máquinas conservadoras e enceradeiras de piso em shoppings, hospitais, condomínios e indústrias.${medidaInfo} Centralize no suporte da máquina antes de acionar o equipamento e lave o disco após a jornada.`;
+  }
+  if (catIdIsHospitalar(catLabel)) {
+    return `Item destinado ao suporte de rotinas clínicas, ambulatoriais, odontológicas ou de primeiros socorros.${medidaInfo} Armazenar em local limpo, seco e ao abrigo de umidade e calor excessivo, seguindo os protocolos de biossegurança da instituição.`;
+  }
+  return `Aplicável em rotinas profissionais e domésticas da linha ${catLabel}, atendendo desde pedidos unitários (CPF) até reposições mensais corporativas (CNPJ).${medidaInfo} Consulte nossa equipe pelo WhatsApp para confirmação de estoque e condições de entrega.`;
+}
+
+function catIdIsHospitalar(catLabel: string): boolean {
+  return norm(catLabel) === "hospitalar";
+}
+
+const RAW_ENTRIES: RawCatalogEntry[] = [
+  {
+    "codigo": "00001",
+    "nome": "Produto diverso p/ consumo",
+    "categoria": "Higiene Pessoal",
+    "especificacoes": "Uso geral / consumo"
+  },
+  {
+    "codigo": "00026",
+    "nome": "Compressa Estéril 7,5cm x 7,5cm 11F Pct c/ 05un - Medi House",
+    "categoria": "Diversos",
+    "medidas": "7,5cm x 7,5cm",
+    "especificacoes": "11 fios, estéril, pacote com 05 unidades, marca Medi House"
+  },
+  {
+    "codigo": "00393",
+    "nome": "Fralda Descartável c/ Barreira e Indicador Karicia Infantil PP",
+    "categoria": "Diversos",
+    "medidas": "Tamanho PP",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "01689444",
+    "nome": "Martelo Tipo de Unha Cabo 300mm - Tekfund",
+    "categoria": "Ferramentas",
+    "medidas": "305 x 110 x 33mm | Cabo 300mm",
+    "especificacoes": "Tipo unha, marca Tekfund"
+  },
+  {
+    "codigo": "1000006090",
+    "nome": "Saco de Ráfia Convencional 60x90cm",
+    "categoria": "Diversos",
+    "medidas": "60cm x 90cm",
+    "especificacoes": "Ráfia convencional resistente"
+  },
+  {
+    "codigo": "1047698",
+    "nome": "Balde Plástico Graduado 20 Litros Alça Metal - Bremen",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 20 Litros",
+    "especificacoes": "Plástico graduado, alça metálica, marca Bremen"
+  },
+  {
+    "codigo": "1152629-E1",
+    "nome": "Pano de Chão Lavado Alvejado 100% Algodão 60x80cm - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "60cm x 80cm",
+    "especificacoes": "Lavado, alvejado, 100% algodão, marca Intextil"
+  },
+  {
+    "codigo": "1161784-PL",
+    "nome": "Pano de Prato Alvejado 100% Algodão 40x65cm - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "40cm x 65cm",
+    "especificacoes": "Alvejado, 100% algodão, acabamento nas laterais, marca Intextil"
+  },
+  {
+    "codigo": "1175858",
+    "nome": "Balde Plástico Preto 12 Litros Alça Metal - Ecoplastic",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 12 Litros",
+    "especificacoes": "Cor preta, alça metálica, marca Ecoplastic"
+  },
+  {
+    "codigo": "1200410",
+    "nome": "Vassourão Gari Cerdas Nylon Base 40cm Cabo 1,60m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 1,60m",
+    "especificacoes": "Cerdas de nylon, cabo de madeira revestido em plástico, marca Halley"
+  },
+  {
+    "codigo": "1247298",
+    "nome": "Lixeira Plástica Retangular c/ Tampa e Pedal 15 Litros Branca - Jaguar",
+    "categoria": "Limpeza",
+    "medidas": "Capacidade 15 Litros",
+    "especificacoes": "Plástica, cor branca, retangular, com tampa e pedal, marca Jaguar"
+  },
+  {
+    "codigo": "1260405",
+    "nome": "Pá de Lixo Plástica c/ Tampa Cabo Revestido 90cm - Perfect Pro",
+    "categoria": "Limpeza",
+    "medidas": "Cabo 90cm",
+    "especificacoes": "Com tampa, plástica, cabo de madeira revestido, marca Perfect Pro"
+  },
+  {
+    "codigo": "126160-F4",
+    "nome": "Flanela de Limpeza 100% Algodão 40x60cm Laranja - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "40cm x 60cm",
+    "especificacoes": "100% algodão, cor laranja, marca Intextil"
+  },
+  {
+    "codigo": "1271326",
+    "nome": "Lixeira Plástica Cilíndrica c/ Tampa 60 Litros Neutra - Arqplast",
+    "categoria": "Limpeza",
+    "medidas": "Capacidade 60 Litros",
+    "especificacoes": "Plástica, cor neutra, cilíndrica com tampa, marca Arqplast"
+  },
+  {
+    "codigo": "1402757",
+    "nome": "Esponja para Banho Espuma c/ Manta Abrasiva - Mais Banho",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Padrão banho",
+    "especificacoes": "Espuma com manta abrasiva, marca Mais Banho"
+  },
+  {
+    "codigo": "1485415",
+    "nome": "Lixeira Escritório Retangular 08 Litros Preta - Office",
+    "categoria": "Limpeza",
+    "medidas": "Capacidade 08 Litros",
+    "especificacoes": "Cor preta, retangular, linha Office"
+  },
+  {
+    "codigo": "15329",
+    "nome": "Creme Dental Infantil sem Flúor 90g",
+    "categoria": "Higiene Pessoal",
+    "medidas": "90 gramas",
+    "especificacoes": "Uso infantil, fórmula sem flúor"
+  },
+  {
+    "codigo": "1545116",
+    "nome": "Shampoo para Cabelos 2 em 1 350ml - Darling",
+    "categoria": "Higiene Pessoal",
+    "medidas": "350ml",
+    "especificacoes": "Fórmula 2 em 1, marca Darling"
+  },
+  {
+    "codigo": "1640046",
+    "nome": "Fibra Sintética Verde Retangular Limpeza Geral - Nobre",
+    "categoria": "Limpeza",
+    "medidas": "Retangular",
+    "especificacoes": "Fibra sintética verde para limpeza geral, marca Nobre"
+  },
+  {
+    "codigo": "1666223",
+    "nome": "Rodo Base Plástica 60cm 2 Borrachas Cabo 120cm - King",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm | Cabo 120cm",
+    "especificacoes": "Base plástica, 2 borrachas, cabo de madeira revestido, marca King"
+  },
+  {
+    "codigo": "1686844",
+    "nome": "Absorvente Higiênico Pós-Operatório 10x40cm Pct c/ 20un - Incontinence",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "10cm x 40cm",
+    "especificacoes": "Uso pós-operatório, pacote com 20 unidades, marca Incontinence"
+  },
+  {
+    "codigo": "1687140",
+    "nome": "Vassoura Cerdas Piaçava Sintética Base 20cm Cabo 1,20m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 20cm | Cabo 1,20m",
+    "especificacoes": "Cerdas piaçava sintética, cabo de madeira revestido com rosca, marca Halley"
+  },
+  {
+    "codigo": "1689533",
+    "nome": "Sabão de Coco em Barra 200g - Atlas",
+    "categoria": "Limpeza",
+    "medidas": "200g",
+    "especificacoes": "Em barra, marca Atlas"
+  },
+  {
+    "codigo": "1693360",
+    "nome": "Sabão em Pó 1kg - Atlas",
+    "categoria": "Limpeza",
+    "medidas": "1kg",
+    "especificacoes": "Em pó, marca Atlas"
+  },
+  {
+    "codigo": "175781-F3",
+    "nome": "Flanela de Limpeza 100% Algodão 40x40cm Laranja - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "40cm x 40cm",
+    "especificacoes": "100% algodão, cor laranja, marca Intextil"
+  },
+  {
+    "codigo": "1810340",
+    "nome": "Vassoura Cerdas Piaçava Sintética Base 60cm Cabo 1,20m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm | Cabo 1,20m",
+    "especificacoes": "Cerdas piaçava sintética, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "1810472",
+    "nome": "Vassoura Cerdas Pelo Natural Base 40cm Cabo 1,50m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 1,50m",
+    "especificacoes": "Cerdas pelo natural, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "1810561",
+    "nome": "Fibra Sintética Azul Limpeza Pesada - SuperPro",
+    "categoria": "Limpeza",
+    "medidas": "Retangular",
+    "especificacoes": "Fibra sintética azul para limpeza pesada, marca SuperPro"
+  },
+  {
+    "codigo": "1810634",
+    "nome": "Vassoura Cerdas Piaçava Base 40cm Cabo 1,50m Rosca - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 1,50m",
+    "especificacoes": "Cerdas de piaçava, cabo de madeira revestido com rosca, marca Halley"
+  },
+  {
+    "codigo": "1844628",
+    "nome": "Vassoura Cerdas Piaçava Base Nº 05 Cabo 1,50m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base Nº 05 | Cabo 1,50m",
+    "especificacoes": "Cerdas de piaçava, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "1851225-A4",
+    "nome": "Pano de Chão Lavado Alvejado 100% Algodão 50x70cm - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "50cm x 70cm",
+    "especificacoes": "Lavado, alvejado, 100% algodão, marca Intextil"
+  },
+  {
+    "codigo": "1852833",
+    "nome": "Vassoura Cerdas Pelo Natural Base 60cm Cabo 1,50m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm | Cabo 1,50m",
+    "especificacoes": "Cerdas pelo natural, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "1852868",
+    "nome": "Vasculho Limpa-Teto Cerdas Nylon Cabo 2,20m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Cabo 2,20m",
+    "especificacoes": "Cerdas de nylon, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "1861093",
+    "nome": "Vassoura Cerdas Palha Base 30x50cm Cabo 1,00m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 30cm x 50cm | Cabo 1,00m",
+    "especificacoes": "Cerdas de palha, cabo de madeira, marca Halley"
+  },
+  {
+    "codigo": "372447-F4",
+    "nome": "Flanela de Limpeza 100% Algodão 38x58cm Laranja - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "38cm x 58cm",
+    "especificacoes": "100% algodão, cor laranja, marca Intextil"
+  },
+  {
+    "codigo": "549045",
+    "nome": "Escova p/ Vaso Sanitário c/ Estojo Cerdas Nylon - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Padrão sanitário",
+    "especificacoes": "Material plástico com estojo, cerdas de nylon, marca Halley"
+  },
+  {
+    "codigo": "554391",
+    "nome": "Disco Enceradeira Limpador Verde 350mm - SuperPro",
+    "categoria": "Limpeza",
+    "medidas": "Diâmetro 350mm",
+    "especificacoes": "Disco limpador cor verde, marca SuperPro"
+  },
+  {
+    "codigo": "556076",
+    "nome": "Disco Enceradeira Limpador Preto 350mm - SuperPro",
+    "categoria": "Limpeza",
+    "medidas": "Diâmetro 350mm",
+    "especificacoes": "Disco limpador cor preta, marca SuperPro"
+  },
+  {
+    "codigo": "556084",
+    "nome": "Disco Enceradeira Removedor Preto 440mm - SuperPro",
+    "categoria": "Limpeza",
+    "medidas": "Diâmetro 440mm",
+    "especificacoes": "Disco removedor cor preta, marca SuperPro"
+  },
+  {
+    "codigo": "56235",
+    "nome": "Arco de Serra Aço Temperado 12\" Cabo Plástico - Mega",
+    "categoria": "Ferramentas",
+    "medidas": "Serra 12 polegadas",
+    "especificacoes": "Aço temperado, cabo de plástico, marca Mega"
+  },
+  {
+    "codigo": "675539-A7",
+    "nome": "Pano de Chão Lavado Alvejado 100% Algodão 50x80cm - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "50cm x 80cm",
+    "especificacoes": "Lavado, alvejado, 100% algodão, marca Intextil"
+  },
+  {
+    "codigo": "723177",
+    "nome": "Balde Plástico 15 Litros Alça Metal - Arqplast",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 15 Litros",
+    "especificacoes": "Plástico, alça metálica, marca Arqplast"
+  },
+  {
+    "codigo": "749079",
+    "nome": "Vasculho Limpa-Teto Cerdas Sisal Cabo 2,20m - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Cabo 2,20m",
+    "especificacoes": "Cerdas de sisal, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "79790-F1",
+    "nome": "Flanela de Limpeza 100% Algodão 30x40cm Laranja - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "30cm x 40cm",
+    "especificacoes": "100% algodão, cor laranja, marca Intextil"
+  },
+  {
+    "codigo": "8000-1",
+    "nome": "Protetor Facial 8\" - Confort",
+    "categoria": "Hospitalar",
+    "medidas": "8 polegadas",
+    "especificacoes": "Visor de proteção facial, modelo 8000-1, marca Confort"
+  },
+  {
+    "codigo": "85480-C3",
+    "nome": "Pano de Chão Cru 100% Algodão 45x75cm - Intextil",
+    "categoria": "Limpeza",
+    "medidas": "45cm x 75cm",
+    "especificacoes": "Tecido cru, 100% algodão, marca Intextil"
+  },
+  {
+    "codigo": "896R",
+    "nome": "Caixa Desmontável 32 Litros Preta",
+    "categoria": "Diversos",
+    "medidas": "Capacidade 32 Litros",
+    "especificacoes": "Desmontável, cor preta"
+  },
+  {
+    "codigo": "935026",
+    "nome": "Desodorante Spray Antiperspirante e Antisséptico sem Perfume 90ml",
+    "categoria": "Higiene Pessoal",
+    "medidas": "90ml",
+    "especificacoes": "Spray sem perfume, ação antiperspirante e antisséptica"
+  },
+  {
+    "codigo": "976261",
+    "nome": "Disco Enceradeira Removedor Preto 510mm - SuperPro",
+    "categoria": "Limpeza",
+    "medidas": "Diâmetro 510mm",
+    "especificacoes": "Disco removedor cor preta, marca SuperPro"
+  },
+  {
+    "codigo": "985368",
+    "nome": "Capacho em Fibra Vinil 70x40x1cm - Master",
+    "categoria": "Limpeza",
+    "medidas": "70cm x 40cm x 1cm",
+    "especificacoes": "Fibra de vinil, marca Master"
+  },
+  {
+    "codigo": "ARQ22",
+    "nome": "Balde Plástico 20 Litros Alça Metal - Arqplast",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 20 Litros",
+    "especificacoes": "Plástico resistente, alça metálica, marca Arqplast"
+  },
+  {
+    "codigo": "BKL-0.205",
+    "nome": "Pá de Lixo Cabo Curto",
+    "categoria": "Limpeza",
+    "medidas": "Cabo curto",
+    "especificacoes": "Uso manual"
+  },
+  {
+    "codigo": "BLK-0.011",
+    "nome": "Rodo Base Metal 40cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm",
+    "especificacoes": "Base metálica, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "BLK-0.027",
+    "nome": "Rodo Base Plástica 30cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 30cm",
+    "especificacoes": "Base plástica, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "BLK-0.028",
+    "nome": "Rodo Base Plástica 40cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm",
+    "especificacoes": "Base plástica, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "BLK-0.029",
+    "nome": "Rodo Base Plástica 60cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm",
+    "especificacoes": "Base plástica, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "BLK-0.206",
+    "nome": "Pá de Lixo 90° s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Articulação 90°",
+    "especificacoes": "Coletora 90 graus, sem cabo"
+  },
+  {
+    "codigo": "BLK-0.222",
+    "nome": "Desentupidor Vaso Sanitário s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Padrão sanitário",
+    "especificacoes": "Borracha flexível, sem cabo"
+  },
+  {
+    "codigo": "C 000053",
+    "nome": "Haste Flexível sem Visor Pct c/ 75un - Cotton Line",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Pacote c/ 75 unidades",
+    "especificacoes": "Pontas de algodão, caixa sem visor, marca Cotton Line"
+  },
+  {
+    "codigo": "CJ0941",
+    "nome": "Banheira de Plástico Capacidade 23 Litros - Adoleta",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Capacidade 23 Litros",
+    "especificacoes": "Plástico resistente, marca Adoleta"
+  },
+  {
+    "codigo": "COS0001",
+    "nome": "Repelente de Insetos DEET 120ml - Repelmax",
+    "categoria": "Higiene Pessoal",
+    "medidas": "120ml",
+    "especificacoes": "Princípio ativo DEET, marca Repelmax"
+  },
+  {
+    "codigo": "COS0002",
+    "nome": "Protetor Solar FPS 30 Bisnaga 120g - Prosun",
+    "categoria": "Higiene Pessoal",
+    "medidas": "120g",
+    "especificacoes": "Fator de proteção FPS 30, bisnaga, marca Prosun"
+  },
+  {
+    "codigo": "CRI001",
+    "nome": "Pasta para Limpeza Pesada em Geral",
+    "categoria": "Limpeza",
+    "medidas": "Pote padrão",
+    "especificacoes": "Desengraxante e limpeza pesada multiuso"
+  },
+  {
+    "codigo": "CYN002",
+    "nome": "Escova Dental Macia Tamanho Infantil - CYN",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho Infantil",
+    "especificacoes": "Cerdas macias, marca CYN"
+  },
+  {
+    "codigo": "DESP23",
+    "nome": "Desentupidor de Pia Borracha - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Padrão pia",
+    "especificacoes": "Ventosa de borracha, marca Halley"
+  },
+  {
+    "codigo": "DEX0001",
+    "nome": "Repelente de Insetos 100ml - Altoff",
+    "categoria": "Higiene Pessoal",
+    "medidas": "100ml",
+    "especificacoes": "Proteção contra insetos, marca Altoff"
+  },
+  {
+    "codigo": "DPG0116",
+    "nome": "Escova Higienização Recipientes Haste 30cm Cerdas Nylon - Facilita",
+    "categoria": "Limpeza",
+    "medidas": "Haste 30cm | Cerdas 20mm",
+    "especificacoes": "Cerdas de nylon 20mm para recipientes, marca Facilita"
+  },
+  {
+    "codigo": "DST23",
+    "nome": "Desentupidor Sanitário de Borracha Cabo Madeira - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Padrão sanitário",
+    "especificacoes": "Ventosa de borracha com cabo de madeira, marca Halley"
+  },
+  {
+    "codigo": "EF2299",
+    "nome": "Esponja Sanitária Dupla Face Espuma c/ Manta Abrasiva - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "Padrão dupla face",
+    "especificacoes": "Espuma com manta abrasiva para uso sanitário, marca Esponflora"
+  },
+  {
+    "codigo": "EMB001",
+    "nome": "Aparelho de Barbear Descartável 2 Lâminas - Persomax",
+    "categoria": "Higiene Pessoal",
+    "medidas": "2 lâminas",
+    "especificacoes": "Descartável, cabo ergonômico, marca Persomax"
+  },
+  {
+    "codigo": "EMB002",
+    "nome": "Mop para Limpeza Úmido 40x12cm - Bompack",
+    "categoria": "Limpeza",
+    "medidas": "40cm x 12cm",
+    "especificacoes": "Mop úmido completo, marca Bompack"
+  },
+  {
+    "codigo": "EMB003",
+    "nome": "Refil Mop para Limpeza Chenille Úmido 40x12cm - Bompack",
+    "categoria": "Limpeza",
+    "medidas": "40cm x 12cm",
+    "especificacoes": "Microfibra chenille para mop úmido, marca Bompack"
+  },
+  {
+    "codigo": "FLY350HO",
+    "nome": "Bico de Mamadeira Mamasil Silicone - Fly Colors",
+    "categoria": "Hospitalar",
+    "medidas": "Padrão mamadeira",
+    "especificacoes": "Silicone atóxico, marca Fly Colors"
+  },
+  {
+    "codigo": "FLY353HO",
+    "nome": "Bico de Mamadeira Mini-Ortodôntico Silicone - Fly Colors",
+    "categoria": "Hospitalar",
+    "medidas": "Mini-ortodôntico",
+    "especificacoes": "Silicone atóxico, marca Fly Colors"
+  },
+  {
+    "codigo": "FLY370HO",
+    "nome": "Bico de Mamadeira Ortodôntico Silicone - Fly Colors",
+    "categoria": "Hospitalar",
+    "medidas": "Ortodôntico",
+    "especificacoes": "Silicone atóxico, marca Fly Colors"
+  },
+  {
+    "codigo": "FM0001",
+    "nome": "Fralda Infantil Neonatus Tamanho Neonatal (0,8 a 2kg) Pct c/ 20un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Neonatal (0,8 a 2kg)",
+    "especificacoes": "Pacote com 20 unidades, linha Neonatus"
+  },
+  {
+    "codigo": "FM0142",
+    "nome": "Escova p/ Higienização de Mamadeiras Recipientes 240ml - Facilita",
+    "categoria": "Limpeza",
+    "medidas": "Para recipientes 240ml",
+    "especificacoes": "Cerdas especiais para limpeza interna, marca Facilita"
+  },
+  {
+    "codigo": "FM22",
+    "nome": "Escova de Roupa Base Plástica Cabo e Cerdas Nylon - FM",
+    "categoria": "Limpeza",
+    "medidas": "Padrão oval/anatômica",
+    "especificacoes": "Base plástica, cabo e cerdas em nylon, marca FM"
+  },
+  {
+    "codigo": "FM23",
+    "nome": "Rodo Base Plástica 40cm 2 Borrachas Cabo 160cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 160cm",
+    "especificacoes": "Base plástica, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "FM25",
+    "nome": "Escova Limpeza das Unhas Corpo Plástico Cerdas Nylon - Escobel",
+    "categoria": "Limpeza",
+    "medidas": "Compacta",
+    "especificacoes": "Corpo plástico, cerdas em nylon, marca Escobel"
+  },
+  {
+    "codigo": "FM28",
+    "nome": "Rodo Base Metal 40cm 2 Borrachas Cabo 160cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 160cm",
+    "especificacoes": "Base metálica, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "FM30",
+    "nome": "Rodo Base Plástica 30cm 2 Borrachas Cabo 120cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 30cm | Cabo 120cm",
+    "especificacoes": "Base plástica, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "FM31",
+    "nome": "Pá de Lixo 90° Plástica Cabo Madeira Revestido - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Articulação 90°",
+    "especificacoes": "Coletora plástica 90 graus, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "FM32",
+    "nome": "Desentupidor Vaso Sanitário Cabo Revestido 60cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Cabo 60cm",
+    "especificacoes": "Ventosa de borracha, cabo revestido, marca Halley"
+  },
+  {
+    "codigo": "FM33",
+    "nome": "Capa Caixa d'Água Redonda Tipo Touca 250L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 250 Litros",
+    "especificacoes": "Formato redondo, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM34",
+    "nome": "Capa Caixa d'Água Quadrada Tipo Touca 250L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 250 Litros",
+    "especificacoes": "Formato quadrado, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM35",
+    "nome": "Capa Caixa d'Água Redonda Tipo Touca 500L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 500 Litros",
+    "especificacoes": "Formato redondo, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM36",
+    "nome": "Capa Caixa d'Água Quadrada Tipo Touca 500L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 500 Litros",
+    "especificacoes": "Formato quadrado, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM37",
+    "nome": "Capa Caixa d'Água Quadrada Tipo Touca 1.000L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 1.000 Litros",
+    "especificacoes": "Formato quadrado, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM38",
+    "nome": "Capa Caixa d'Água Redonda Tipo Touca 1.500L - FM",
+    "categoria": "Ferramentas",
+    "medidas": "Capacidade 1.500 Litros",
+    "especificacoes": "Formato redondo, ajuste tipo touca com elástico, marca FM"
+  },
+  {
+    "codigo": "FM40",
+    "nome": "Escova p/ Vaso Sanitário c/ Estojo Cerdas Nylon - Original",
+    "categoria": "Limpeza",
+    "medidas": "Padrão sanitário",
+    "especificacoes": "Material plástico com estojo, cerdas de nylon, marca Original"
+  },
+  {
+    "codigo": "FM42",
+    "nome": "Desentupidor de Pia Borracha - FM",
+    "categoria": "Limpeza",
+    "medidas": "Padrão pia",
+    "especificacoes": "Borracha flexível, marca FM"
+  },
+  {
+    "codigo": "FM43",
+    "nome": "Desentupidor de Pia Borracha Sanfonado - FM",
+    "categoria": "Limpeza",
+    "medidas": "Padrão pia",
+    "especificacoes": "Modelo sanfonado de alta pressão, borracha, marca FM"
+  },
+  {
+    "codigo": "GTECH400",
+    "nome": "Gelo Rígido Reutilizável 400ml - Gelotech",
+    "categoria": "Hospitalar",
+    "medidas": "400ml",
+    "especificacoes": "Elemento térmico rígido reutilizável, marca Gelotech"
+  },
+  {
+    "codigo": "GTECH550",
+    "nome": "Gelo Rígido Reutilizável 550ml - Gelotech",
+    "categoria": "Hospitalar",
+    "medidas": "550ml",
+    "especificacoes": "Elemento térmico rígido reutilizável, marca Gelotech"
+  },
+  {
+    "codigo": "GTECH700",
+    "nome": "Gelo Rígido Reutilizável 700ml - Gelotech",
+    "categoria": "Hospitalar",
+    "medidas": "700ml",
+    "especificacoes": "Elemento térmico rígido reutilizável, marca Gelotech"
+  },
+  {
+    "codigo": "HAL901",
+    "nome": "Cabo de Madeira Revestimento Plástico c/ Rosca 1,50m",
+    "categoria": "Limpeza",
+    "medidas": "Comprimento 1,50m",
+    "especificacoes": "Madeira com revestimento plástico e ponteira de rosca"
+  },
+  {
+    "codigo": "HAL902",
+    "nome": "Cabo de Madeira Revestimento Plástico c/ Rosca 60cm",
+    "categoria": "Limpeza",
+    "medidas": "Comprimento 60cm",
+    "especificacoes": "Madeira com revestimento plástico e ponteira de rosca"
+  },
+  {
+    "codigo": "HAL903",
+    "nome": "Cabo de Madeira Revestimento Plástico c/ Rosca 1,20m",
+    "categoria": "Limpeza",
+    "medidas": "Comprimento 1,20m",
+    "especificacoes": "Madeira com revestimento plástico e ponteira de rosca"
+  },
+  {
+    "codigo": "HEA1",
+    "nome": "Vitamina D3 10.000 UI Pote 360 Cápsulas - Healthy Origins",
+    "categoria": "Hospitalar",
+    "medidas": "Pote c/ 360 unidades",
+    "especificacoes": "Suplemento vitamínico 10.000 UI, marca Healthy Origins"
+  },
+  {
+    "codigo": "HF0120",
+    "nome": "Fralda Infantil Cherito Tamanho Neonatal (0,8 a 2kg) Pct c/ 20un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Neonatal (0,8 a 2kg)",
+    "especificacoes": "Pacote com 20 unidades, marca Cherito"
+  },
+  {
+    "codigo": "IB001",
+    "nome": "Sabonete Sachê 10g - Mahy",
+    "categoria": "Higiene Pessoal",
+    "medidas": "10g",
+    "especificacoes": "Embalagem individual sachê para hotelaria/hospitais, marca Mahy"
+  },
+  {
+    "codigo": "IB002",
+    "nome": "Sabonete Sachê 11g - Grion",
+    "categoria": "Higiene Pessoal",
+    "medidas": "11g",
+    "especificacoes": "Embalagem individual sachê para hotelaria/hospitais, marca Grion"
+  },
+  {
+    "codigo": "L01/30P",
+    "nome": "Shampoo 2 em 1 Sachê Perolado 30ml - Dovely",
+    "categoria": "Higiene Pessoal",
+    "medidas": "30ml",
+    "especificacoes": "Fórmula perolada 2 em 1, embalagem sachê, marca Dovely"
+  },
+  {
+    "codigo": "L5630P2",
+    "nome": "Sabonete Líquido Sachê Neutro sem Cheiro 30ml - Dovely / Dolce Brazilis",
+    "categoria": "Higiene Pessoal",
+    "medidas": "30ml",
+    "especificacoes": "Neutro, sem fragrância, embalagem sachê, marca Dovely / Dolce Brazilis"
+  },
+  {
+    "codigo": "LEVORIN1",
+    "nome": "Câmara de Ar 3.25/3.00 - Levorin",
+    "categoria": "Ferramentas",
+    "medidas": "3.25/3.00",
+    "especificacoes": "Borracha de alta resistência para carrinhos/utilitários, marca Levorin"
+  },
+  {
+    "codigo": "LOLLY1",
+    "nome": "Chupeta Silicone Bebês 0 a 6 Meses - Lolly",
+    "categoria": "Hospitalar",
+    "medidas": "0 a 6 meses",
+    "especificacoes": "Silicone macio atóxico, marca Lolly"
+  },
+  {
+    "codigo": "LOLLY1971-00-AZ",
+    "nome": "Mamadeira Mini Tip Bico Silicone Redondo 50ml - Lolly",
+    "categoria": "Hospitalar",
+    "medidas": "50ml",
+    "especificacoes": "Bico de silicone redondo, marca Lolly"
+  },
+  {
+    "codigo": "LVP001",
+    "nome": "Luva em EVA Estéril 40 Microns - Luvaplast",
+    "categoria": "Hospitalar",
+    "medidas": "Espessura 40 microns",
+    "especificacoes": "Material EVA estéril, marca Luvaplast"
+  },
+  {
+    "codigo": "LVP002",
+    "nome": "Luva em EVA Estéril 18 Microns - Luvaplast",
+    "categoria": "Hospitalar",
+    "medidas": "Espessura 18 microns",
+    "especificacoes": "Material EVA estéril, marca Luvaplast"
+  },
+  {
+    "codigo": "LVP003",
+    "nome": "Luva Plástica PEAD Não Estéril Descartável Pct c/ 100un - Luvaplast",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Pacote c/ 100 unidades",
+    "especificacoes": "Polietileno de alta densidade (PEAD), descartável, não estéril, marca Luvaplast"
+  },
+  {
+    "codigo": "MAR004",
+    "nome": "Sabonete em Tablete Comum 90g - Marluce",
+    "categoria": "Higiene Pessoal",
+    "medidas": "90g",
+    "especificacoes": "Em barra/tablete, marca Marluce"
+  },
+  {
+    "codigo": "MEX001",
+    "nome": "Luva de Limpeza Multiuso Látex Natural Tam P Cano Médio - MBLife",
+    "categoria": "Limpeza",
+    "medidas": "Tamanho P | Cano Médio",
+    "especificacoes": "Látex natural, forro 100% algodão e palma antiderrapante, marca MBLife"
+  },
+  {
+    "codigo": "MEX002",
+    "nome": "Luva de Limpeza Multiuso Látex Natural Tam M Cano Médio - MBLife",
+    "categoria": "Limpeza",
+    "medidas": "Tamanho M | Cano Médio",
+    "especificacoes": "Látex natural, forro 100% algodão e palma antiderrapante, marca MBLife"
+  },
+  {
+    "codigo": "MEX003",
+    "nome": "Luva de Limpeza Multiuso Látex Natural Tam G Cano Médio - MBLife",
+    "categoria": "Limpeza",
+    "medidas": "Tamanho G | Cano Médio",
+    "especificacoes": "Látex natural, forro 100% algodão e palma antiderrapante, marca MBLife"
+  },
+  {
+    "codigo": "MEX004",
+    "nome": "Luva de Limpeza Multiuso Látex Natural Tam EG Cano Médio - MBLife",
+    "categoria": "Limpeza",
+    "medidas": "Tamanho EG | Cano Médio",
+    "especificacoes": "Látex natural, forro 100% algodão e palma antiderrapante, marca MBLife"
+  },
+  {
+    "codigo": "MEX005",
+    "nome": "Luva Plástica PEAD Não Estéril Descartável Pct c/ 100un - MBLife",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Pacote c/ 100 unidades",
+    "especificacoes": "Polietileno (PEAD), descartável, não estéril, marca MBLife"
+  },
+  {
+    "codigo": "MEX006",
+    "nome": "Óculos de Proteção Antirrisco UV400 Lente Incolor - MBXpro",
+    "categoria": "EPI",
+    "medidas": "Tamanho único",
+    "especificacoes": "Tratamento antirrisco, proteção UV400, lente incolor, marca MBXpro"
+  },
+  {
+    "codigo": "MEX007",
+    "nome": "Óculos de Proteção Antirrisco e Antiembaçante UV400 Lente Incolor - MBXpro",
+    "categoria": "EPI",
+    "medidas": "Tamanho único",
+    "especificacoes": "Antirrisco, antiembaçante, proteção UV400, lente incolor, marca MBXpro"
+  },
+  {
+    "codigo": "MEX008",
+    "nome": "Avental Manga Longa TNT 16g - Medix",
+    "categoria": "Hospitalar",
+    "medidas": "Gramatura 16g/m²",
+    "especificacoes": "Manga longa, confeccionado em TNT, descartável, marca Medix"
+  },
+  {
+    "codigo": "MEX009",
+    "nome": "Avental Manga Longa TNT 30g - Medix",
+    "categoria": "Hospitalar",
+    "medidas": "Gramatura 30g/m²",
+    "especificacoes": "Manga longa, confeccionado em TNT, descartável, marca Medix"
+  },
+  {
+    "codigo": "MEX010",
+    "nome": "Avental Manga Longa TNT 40g - Medix",
+    "categoria": "Hospitalar",
+    "medidas": "Gramatura 40g/m²",
+    "especificacoes": "Manga longa, confeccionado em TNT, descartável, marca Medix"
+  },
+  {
+    "codigo": "MH00026",
+    "nome": "Compressa Estéril 7,5cm x 7,5cm 11F Pct c/ 05un - Medi House",
+    "categoria": "Hospitalar",
+    "medidas": "7,5cm x 7,5cm",
+    "especificacoes": "11 fios, estéril, pacote com 05 unidades, marca Medi House"
+  },
+  {
+    "codigo": "MH00393",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam PP Pct c/ 16un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho PP | Pct c/ 16un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00401",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam P Pct c/ 14un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho P | Pct c/ 14un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00402",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam M Pct c/ 12un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho M | Pct c/ 12un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00403",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam G Pct c/ 10un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho G | Pct c/ 10un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00404",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam EG Pct c/ 10un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho EG | Pct c/ 10un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00430",
+    "nome": "Fralda Geriátrica Incontinence Tam G Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho G | Pct c/ 08un",
+    "especificacoes": "Uso geriátrico/adulto, marca Incontinence"
+  },
+  {
+    "codigo": "MH00431",
+    "nome": "Fralda Geriátrica Incontinence Tam EG Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho EG | Pct c/ 08un",
+    "especificacoes": "Uso geriátrico/adulto, marca Incontinence"
+  },
+  {
+    "codigo": "MH00432",
+    "nome": "Fralda Geriátrica Incontinence Tam P Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho P | Pct c/ 08un",
+    "especificacoes": "Uso geriátrico/adulto, marca Incontinence"
+  },
+  {
+    "codigo": "MH00453",
+    "nome": "Fralda Infantil Karicia c/ Barreira e Indicador Tam SEG Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho SEG | Pct c/ 08un",
+    "especificacoes": "Com barreira antivazamento e indicador de umidade, marca Karicia"
+  },
+  {
+    "codigo": "MH00465",
+    "nome": "Fralda Geriátrica Medifral Plus Sec c/ Barreira e Indicador Tam P Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho P | Pct c/ 08un",
+    "especificacoes": "Gel absorvente, barreira antivazamento e indicador de umidade, marca Medifral Plus"
+  },
+  {
+    "codigo": "MH00466",
+    "nome": "Fralda Geriátrica Medifral Plus Sec c/ Barreira e Indicador Tam M Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho M | Pct c/ 08un",
+    "especificacoes": "Gel absorvente, barreira antivazamento e indicador de umidade, marca Medifral Plus"
+  },
+  {
+    "codigo": "MH00467",
+    "nome": "Fralda Geriátrica Medifral Plus Sec c/ Barreira e Indicador Tam G Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho G | Pct c/ 08un",
+    "especificacoes": "Gel absorvente, barreira antivazamento e indicador de umidade, marca Medifral Plus"
+  },
+  {
+    "codigo": "MH101148",
+    "nome": "Splint Intranasal Especial c/ 02un - Medi House",
+    "categoria": "Hospitalar",
+    "medidas": "Cartela c/ 02 unidades",
+    "especificacoes": "Silicone grau médico, modelo especial, marca Medi House"
+  },
+  {
+    "codigo": "MH101149",
+    "nome": "Tala Nasal Externa - Medi House",
+    "categoria": "Hospitalar",
+    "medidas": "Padrão",
+    "especificacoes": "Imobilização nasal pós-cirúrgica, marca Medi House"
+  },
+  {
+    "codigo": "MH26/10",
+    "nome": "Compressa Estéril 7,5cm x 7,5cm 11F Pct c/ 10un - Medi House",
+    "categoria": "Hospitalar",
+    "medidas": "7,5cm x 7,5cm",
+    "especificacoes": "11 fios, estéril, pacote com 10 unidades, marca Medi House"
+  },
+  {
+    "codigo": "MSO45",
+    "nome": "Malha Tubular para Dedos Cru 25m",
+    "categoria": "Hospitalar",
+    "medidas": "Rolo 25 metros",
+    "especificacoes": "Algodão cru tubular para curativos digitais"
+  },
+  {
+    "codigo": "MSO55",
+    "nome": "Tala Metálica Imobilizadora c/ Espuma 19x180mm - MSO",
+    "categoria": "Hospitalar",
+    "medidas": "19mm x 180mm",
+    "especificacoes": "Alumínio moldável revestido com espuma, marca MSO"
+  },
+  {
+    "codigo": "MSO70",
+    "nome": "Colar Cervical de Espuma Tamanho P - MSO",
+    "categoria": "Hospitalar",
+    "medidas": "Tamanho P",
+    "especificacoes": "Espuma anatômica com fecho aderente, marca MSO"
+  },
+  {
+    "codigo": "MSO71",
+    "nome": "Colar Cervical de Espuma Tamanho M - MSO",
+    "categoria": "Hospitalar",
+    "medidas": "Tamanho M",
+    "especificacoes": "Espuma anatômica com fecho aderente, marca MSO"
+  },
+  {
+    "codigo": "MSO72",
+    "nome": "Colar Cervical de Espuma Tamanho G - MSO",
+    "categoria": "Hospitalar",
+    "medidas": "Tamanho G",
+    "especificacoes": "Espuma anatômica com fecho aderente, marca MSO"
+  },
+  {
+    "codigo": "MSO730",
+    "nome": "Meia Térmica de Algodão - MSO",
+    "categoria": "Hospitalar",
+    "medidas": "Tamanho único",
+    "especificacoes": "Algodão térmico para conforto hospitalar, marca MSO"
+  },
+  {
+    "codigo": "NC001",
+    "nome": "Cortador de Unhas dos Pés Aço Inox - Premium",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho grande (pés)",
+    "especificacoes": "Aço inoxidável de alta precisão, marca Premium"
+  },
+  {
+    "codigo": "PAS23",
+    "nome": "Pasta para Limpeza Pesada 500g - Cristal",
+    "categoria": "Limpeza",
+    "medidas": "500g",
+    "especificacoes": "Desengraxante para limpeza pesada, marca Cristal"
+  },
+  {
+    "codigo": "PR_AERO_001",
+    "nome": "Desodorante Spray Antiperspirante e Antisséptico sem Perfume 140ml - Mood",
+    "categoria": "Higiene Pessoal",
+    "medidas": "140ml",
+    "especificacoes": "Spray sem perfume, ação antiperspirante e antisséptica, marca Mood"
+  },
+  {
+    "codigo": "PR00028",
+    "nome": "Disco Enceradeira Limpador Verde 350mm - Certec",
+    "categoria": "Limpeza",
+    "medidas": "Diâmetro 350mm",
+    "especificacoes": "Disco limpador cor verde, marca Certec"
+  },
+  {
+    "codigo": "PRD00001",
+    "nome": "Fralda Geriátrica Medifral Plus Sec c/ Barreira e Indicador Tam EG Pct c/ 08un",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Tamanho EG | Pct c/ 08un",
+    "especificacoes": "Gel absorvente, barreira antivazamento e indicador de umidade, marca Medifral Plus"
+  },
+  {
+    "codigo": "PRD00002",
+    "nome": "Shampoo Neutro Todos os Tipos de Cabelo Adulto - Palmolive",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Frasco padrão",
+    "especificacoes": "Fórmula neutra uso adulto, marca Palmolive"
+  },
+  {
+    "codigo": "PRD00003",
+    "nome": "Condicionador Cabelos Normais - Neutrox",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Frasco padrão",
+    "especificacoes": "Hidratação para cabelos normais, marca Neutrox"
+  },
+  {
+    "codigo": "PRD00004",
+    "nome": "Banheira Bebê Polietileno c/ Saboneteira 30L - Arqplast",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Capacidade 30 Litros",
+    "especificacoes": "Polietileno resistente com saboneteira integrada, marca Arqplast"
+  },
+  {
+    "codigo": "PRD00005",
+    "nome": "Desodorizador Sanitário Lavanda Pedra c/ Suporte - Sany Desoral",
+    "categoria": "Limpeza",
+    "medidas": "Unidade c/ suporte",
+    "especificacoes": "Fragrância lavanda, pedra sanitária com suporte plástico, marca Sany Desoral"
+  },
+  {
+    "codigo": "PRD00007",
+    "nome": "Fibra Sintética Verde Retangular Limpeza Pesada - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "Retangular",
+    "especificacoes": "Fibra sintética verde abrasiva para limpeza pesada, marca Esponflora"
+  },
+  {
+    "codigo": "PRD00008",
+    "nome": "Palha de Aço Nº 0 Pct 25g - Vega",
+    "categoria": "Limpeza",
+    "medidas": "Nº 0 | Pct 25g",
+    "especificacoes": "Aço carbono fino para limpeza e polimento, marca Vega"
+  },
+  {
+    "codigo": "PRD00009",
+    "nome": "Palha de Aço Nº 1 Pct 25g - Vega",
+    "categoria": "Limpeza",
+    "medidas": "Nº 1 | Pct 25g",
+    "especificacoes": "Aço carbono médio para limpeza geral, marca Vega"
+  },
+  {
+    "codigo": "PRD00010",
+    "nome": "Palha de Aço Nº 2 Pct 25g - Vega",
+    "categoria": "Limpeza",
+    "medidas": "Nº 2 | Pct 25g",
+    "especificacoes": "Aço carbono grosso para limpeza pesada, marca Vega"
+  },
+  {
+    "codigo": "PRD00011",
+    "nome": "Saponáceo em Pó - Sany Desoral",
+    "categoria": "Limpeza",
+    "medidas": "Frasco padrão",
+    "especificacoes": "Limpeza profunda e remoção de manchas sem riscar, marca Sany Desoral"
+  },
+  {
+    "codigo": "PRD00012",
+    "nome": "Esponja Sintética Dupla Face - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "Padrão multiuso",
+    "especificacoes": "Espuma macia e fibra abrasiva, marca Esponflora"
+  },
+  {
+    "codigo": "PRD00014",
+    "nome": "Escova Dental Adulto Média Cerdas Nylon Macia - CYN",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho Adulto",
+    "especificacoes": "Cabeça média, cerdas de nylon macias, marca CYN"
+  },
+  {
+    "codigo": "PRD00015",
+    "nome": "Fibra Sintética Azul Limpeza Pesada - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "Retangular",
+    "especificacoes": "Fibra sintética azul para limpeza pesada, marca Esponflora"
+  },
+  {
+    "codigo": "PRD00016",
+    "nome": "Fibra Sintética Branca Limpeza Leve - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "Retangular",
+    "especificacoes": "Fibra sintética branca não abrasiva para limpeza leve/superfícies delicadas, marca Esponflora"
+  },
+  {
+    "codigo": "PRD00017",
+    "nome": "Fio Dental Encerado Rolo 100m - Predent",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Rolo 100 metros",
+    "especificacoes": "Fio encerado resistente ao desfiamento, marca Predent"
+  },
+  {
+    "codigo": "PRD00018",
+    "nome": "Condicionador Neutro Todos os Tipos de Cabelo Adulto - Palmolive",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Frasco padrão",
+    "especificacoes": "Fórmula neutra uso adulto, marca Palmolive"
+  },
+  {
+    "codigo": "PRD00019",
+    "nome": "Creme Hidratante para Pele 400ml - Skala",
+    "categoria": "Higiene Pessoal",
+    "medidas": "400ml",
+    "especificacoes": "Hidratação corporal diária, marca Skala"
+  },
+  {
+    "codigo": "PRD00020",
+    "nome": "Absorvente Higiênico c/ Abas Pct c/ 08un - Definity",
+    "categoria": "Higiene & Absorventes",
+    "medidas": "Pacote c/ 08 unidades",
+    "especificacoes": "Com abas protetoras, cobertura suave, marca Definity"
+  },
+  {
+    "codigo": "PRD00021",
+    "nome": "Suporte de Braço Tripé Concha Aço Inox Altura Regulável - Metalic",
+    "categoria": "Hospitalar",
+    "medidas": "Altura regulável",
+    "especificacoes": "Base tripé, concha em aço inoxidável para coleta/injeção, marca Metalic"
+  },
+  {
+    "codigo": "PRD00022",
+    "nome": "Suplemento Alimentar L-Glutamina Glutamax Lata 300g - Vitafor",
+    "categoria": "Hospitalar",
+    "medidas": "Lata 300g",
+    "especificacoes": "100% L-Glutamina isolada, linha Glutamax, marca Vitafor"
+  },
+  {
+    "codigo": "PRD00024",
+    "nome": "Quebrador de Ampolas 1 a 20ml - Medi Express",
+    "categoria": "Hospitalar",
+    "medidas": "Para ampolas de 1 a 20ml",
+    "especificacoes": "Dispositivo de abertura segura para ampolas de vidro, marca Medi Express"
+  },
+  {
+    "codigo": "PRD00026",
+    "nome": "Esponja Sintética Dupla Face - Fuzuê",
+    "categoria": "Limpeza",
+    "medidas": "Padrão multiuso",
+    "especificacoes": "Espuma e fibra sintética, marca Fuzuê"
+  },
+  {
+    "codigo": "PRD00027",
+    "nome": "Aparelho de Barbear Descartável 2 Lâminas - Original",
+    "categoria": "Higiene Pessoal",
+    "medidas": "2 lâminas",
+    "especificacoes": "Descartável, marca Original"
+  },
+  {
+    "codigo": "PRD00029",
+    "nome": "Refil Mop Spray Microfibra Úmido 43x15cm - Bompack",
+    "categoria": "Limpeza",
+    "medidas": "43cm x 15cm",
+    "especificacoes": "Microfibra lavável para mop spray, marca Bompack"
+  },
+  {
+    "codigo": "PRD00030",
+    "nome": "Caixa Térmica Isopor 500g - Isofort",
+    "categoria": "Embalagens",
+    "medidas": "Capacidade 500g",
+    "especificacoes": "Poliestireno expandido (EPS) com tampa, marca Isofort"
+  },
+  {
+    "codigo": "PRD00031",
+    "nome": "Berço Isopor p/ 05 Ampolas - Isofort",
+    "categoria": "Embalagens",
+    "medidas": "Para 05 ampolas",
+    "especificacoes": "Suporte protetor em isopor (EPS) para transporte de ampolas, marca Isofort"
+  },
+  {
+    "codigo": "PRD00032",
+    "nome": "Escova de Roupa Base Plástica Cabo e Cerdas Nylon - Esfregona",
+    "categoria": "Limpeza",
+    "medidas": "Padrão anatômica",
+    "especificacoes": "Base plástica, cabo e cerdas em nylon, marca Esfregona"
+  },
+  {
+    "codigo": "PRD00033",
+    "nome": "Esponja Sintética Poliuretano 22x13x06cm - Esponflora",
+    "categoria": "Limpeza",
+    "medidas": "22cm x 13cm x 06cm",
+    "especificacoes": "Bloco de espuma de poliuretano de alta absorção, marca Esponflora"
+  },
+  {
+    "codigo": "PRD00034",
+    "nome": "Rodo Base Alumínio 40cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm",
+    "especificacoes": "Base reforçada em alumínio, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "PRD00035",
+    "nome": "Rodo Base Alumínio 60cm 2 Borrachas Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm",
+    "especificacoes": "Base reforçada em alumínio, 2 borrachas, sistema rosca, sem cabo"
+  },
+  {
+    "codigo": "PRD00036",
+    "nome": "Rodo Base Alumínio 60cm 2 Borrachas Cabo 120cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm | Cabo 120cm",
+    "especificacoes": "Base de alumínio, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "PRD00037",
+    "nome": "Rodo Base Alumínio 40cm 2 Borrachas Cabo 120cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 120cm",
+    "especificacoes": "Base de alumínio, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "PRD00038",
+    "nome": "Rodo Base Madeira 30cm c/ Espuma Rosca s/ Cabo",
+    "categoria": "Limpeza",
+    "medidas": "Base 30cm",
+    "especificacoes": "Base de madeira com espuma absorvente, rosca, sem cabo"
+  },
+  {
+    "codigo": "PRD00039",
+    "nome": "Rodo Base Madeira 30cm c/ Espuma Cabo 120cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 30cm | Cabo 120cm",
+    "especificacoes": "Base de madeira com espuma, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "PRD00040",
+    "nome": "Rodo Base Plástica 60cm 2 Borrachas Cabo 120cm - Halley",
+    "categoria": "Limpeza",
+    "medidas": "Base 60cm | Cabo 120cm",
+    "especificacoes": "Base plástica, 2 borrachas, cabo de madeira revestido, marca Halley"
+  },
+  {
+    "codigo": "PRD00041",
+    "nome": "Cortador de Unhas das Mãos Aço Inox - Premium",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho padrão (mãos)",
+    "especificacoes": "Aço inoxidável de alta precisão, marca Premium"
+  },
+  {
+    "codigo": "PRD00042",
+    "nome": "Lixeira Escritório Retangular 12 Litros Preta - Eco",
+    "categoria": "Limpeza",
+    "medidas": "Capacidade 12 Litros",
+    "especificacoes": "Cor preta, formato retangular, linha Eco"
+  },
+  {
+    "codigo": "PRD00043",
+    "nome": "Cabo de Madeira c/ Virola e Rosca 1,20m",
+    "categoria": "Limpeza",
+    "medidas": "Comprimento 1,20m",
+    "especificacoes": "Madeira natural com virola reforçada e ponteira de rosca"
+  },
+  {
+    "codigo": "PRD00044",
+    "nome": "Prolongador de Cabo Extensor",
+    "categoria": "Limpeza",
+    "medidas": "Extensível",
+    "especificacoes": "Acoplamento universal para limpeza em altura"
+  },
+  {
+    "codigo": "PRD00045",
+    "nome": "Fibra Vinil Rolo 120cm x 12m - Kapazi",
+    "categoria": "Limpeza",
+    "medidas": "120cm x 12m",
+    "especificacoes": "Rolo de fibra vinílica para tapetes/capachos personalizados, marca Kapazi"
+  },
+  {
+    "codigo": "ROD22",
+    "nome": "Rodo Base Metal 40cm 2 Borrachas Cabo 160cm - FM",
+    "categoria": "Limpeza",
+    "medidas": "Base 40cm | Cabo 160cm",
+    "especificacoes": "Base metálica, 2 borrachas, cabo de madeira revestido em plástico, marca FM"
+  },
+  {
+    "codigo": "THO-773",
+    "nome": "Trena Color c/ Trava 05m - Thompson",
+    "categoria": "Ferramentas",
+    "medidas": "Comprimento 05 metros",
+    "especificacoes": "Fita métrica retrátil com trava de segurança, marca Thompson"
+  },
+  {
+    "codigo": "TLG1043",
+    "nome": "Lenço Banho de Leito WiperPlus Pro60 Branco 28x35cm 60g",
+    "categoria": "Higiene Pessoal",
+    "medidas": "28cm x 35cm | 60g/m²",
+    "especificacoes": "Toalha descartável macia para banho de leito, cor branca, linha WiperPlus Pro60"
+  },
+  {
+    "codigo": "TLG1265",
+    "nome": "Luva Plástica PEAD Não Estéril Descartável Tam Único XG - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho Único XG",
+    "especificacoes": "Polietileno de alta densidade (PEAD), descartável, não estéril, marca Talge"
+  },
+  {
+    "codigo": "TLG7028",
+    "nome": "Luva de Vinil com Pó Tam P 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho P | Comprimento 240mm",
+    "especificacoes": "Resina vinílica com pó bioabsorvível, ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7029",
+    "nome": "Luva de Vinil com Pó Tam M 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho M | Comprimento 240mm",
+    "especificacoes": "Resina vinílica com pó bioabsorvível, ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7030",
+    "nome": "Luva de Vinil com Pó Tam G 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho G | Comprimento 240mm",
+    "especificacoes": "Resina vinílica com pó bioabsorvível, ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7125",
+    "nome": "Luva Látex com Pó Tam P 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho P | Comprimento 240mm",
+    "especificacoes": "Borracha natural (látex) com pó bioabsorvível, marca Talge"
+  },
+  {
+    "codigo": "TLG7126",
+    "nome": "Luva Látex com Pó Tam M 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho M | Comprimento 240mm",
+    "especificacoes": "Borracha natural (látex) com pó bioabsorvível, marca Talge"
+  },
+  {
+    "codigo": "TLG7127",
+    "nome": "Luva Látex com Pó Tam G 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho G | Comprimento 240mm",
+    "especificacoes": "Borracha natural (látex) com pó bioabsorvível, marca Talge"
+  },
+  {
+    "codigo": "TLG7212",
+    "nome": "Luva de Vinil sem Pó Tam P 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho P | Comprimento 240mm",
+    "especificacoes": "Resina vinílica isenta de pó (powder-free), ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7214",
+    "nome": "Luva de Vinil sem Pó Tam M 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho M | Comprimento 240mm",
+    "especificacoes": "Resina vinílica isenta de pó (powder-free), ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7216",
+    "nome": "Luva de Vinil sem Pó Tam G 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho G | Comprimento 240mm",
+    "especificacoes": "Resina vinílica isenta de pó (powder-free), ambidestra, marca Talge"
+  },
+  {
+    "codigo": "TLG7350",
+    "nome": "Luva Nitrílica Preta sem Pó Tam P 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho P | Comprimento 240mm",
+    "especificacoes": "Borracha nitrílica preta de alta resistência química/mecânica, marca Talge"
+  },
+  {
+    "codigo": "TLG7351",
+    "nome": "Luva Nitrílica Preta sem Pó Tam M 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho M | Comprimento 240mm",
+    "especificacoes": "Borracha nitrílica preta de alta resistência química/mecânica, marca Talge"
+  },
+  {
+    "codigo": "TLG7352",
+    "nome": "Luva Nitrílica Preta sem Pó Tam G 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho G | Comprimento 240mm",
+    "especificacoes": "Borracha nitrílica preta de alta resistência química/mecânica, marca Talge"
+  },
+  {
+    "codigo": "TLG7361",
+    "nome": "Luva Látex com Pó Tam PP 240mm - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Tamanho PP | Comprimento 240mm",
+    "especificacoes": "Borracha natural (látex) com pó bioabsorvível, marca Talge"
+  },
+  {
+    "codigo": "TLG7364",
+    "nome": "Touca TNT Sanfonada Branca 10g/m² - Talge",
+    "categoria": "Higiene Pessoal",
+    "medidas": "Gramatura 10g/m² | Tamanho único",
+    "especificacoes": "TNT descartável sanfonada com elástico duplo, cor branca, marca Talge"
+  },
+  {
+    "codigo": "XFM22X",
+    "nome": "Escova para Roupa Plástica c/ Cabo e Cerdas Nylon - FM",
+    "categoria": "Limpeza",
+    "medidas": "Padrão anatômica",
+    "especificacoes": "Corpo plástico, cabo ergonômico e cerdas em nylon, marca FM"
+  }
+];
+
+export const REAL_CATALOG_PRODUCTS: Product[] = RAW_ENTRIES.map((item, idx) => {
+  const catLabel = item.categoria && CATEGORY_MAP[item.categoria] ? item.categoria : "Diversos";
+  const catId = CATEGORY_MAP[catLabel] || "diversos";
+  const measures = (item.medidas || "").trim() || "Padrão comercial";
+  const spec = (item.especificacoes || "").trim() || "Uso geral / padrão distribuidor";
+  const cleanName = cleanProductTitle(item.nome);
+
+  return {
+    id: idx + 1,
+    sku: item.codigo,
+    name: cleanName,
+    category: catId,
+    rooms: assignRooms(catId, item.nome),
+    segments: assignSegments(catId, item.nome),
+    about: buildAbout(catLabel, cleanName, item.nome),
+    description: buildDescription(item.nome, catLabel, measures),
+    measures,
+    spec,
+    qtdMinima: 1,
+    image: ""
+  };
+});

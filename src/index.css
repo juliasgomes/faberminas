@@ -4,6 +4,8 @@
   color-scheme: light only;
   --brand-primary: #004d61;
   --brand-hover: #003a49;
+  --brand-deep: #002b36;
+  --brand-soft: #eef5f7;
 }
 
 html, body {
@@ -13,6 +15,9 @@ html, body {
   forced-color-adjust: none;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   scroll-behavior: smooth;
+  background-color: #ffffff;
+  color: #1e293b;
+  overflow-x: clip;
 }
 
 /* Cores estritamente baseadas em #004d61 */
@@ -33,15 +38,63 @@ html, body {
   border-color: #004d61 !important;
 }
 
-/* Animações e microinterações caprichadas nos botões */
+/* Malha arquitetônica sutil para seções #004d61 e seções claras */
+.bg-arch-grid-dark {
+  background-color: #004d61;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.bg-arch-grid-light {
+  background-color: #F8FAFC;
+  background-image:
+    linear-gradient(to right, rgba(0, 77, 97, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 77, 97, 0.045) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* Transição suave entre views (#/inicio <-> #/produtos) e filtros */
+@keyframes viewEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-view-enter {
+  animation: viewEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInModal {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animações e microinterações nos botões (.btn-anim) */
 .btn-anim {
   position: relative;
   overflow: hidden;
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              background-color 0.22s ease,
-              border-color 0.22s ease,
-              color 0.22s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease;
   user-select: none;
 }
 
@@ -54,7 +107,7 @@ html, body {
   height: 100%;
   background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   transform: skewX(-20deg);
-  transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 
@@ -68,12 +121,12 @@ html, body {
 }
 
 .btn-anim:active {
-  transform: translateY(1px) scale(0.96) !important;
+  transform: translateY(1px) scale(0.98) !important;
   box-shadow: 0 3px 8px -2px rgba(0, 77, 97, 0.25);
 }
 
 .btn-anim svg {
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-anim:hover svg.icon-down {
@@ -85,19 +138,19 @@ html, body {
 }
 
 .btn-anim:hover svg.icon-pop {
-  transform: scale(1.18) rotate(-6deg);
+  transform: scale(1.15) rotate(-6deg);
 }
 
 /* Interação tátil de clique nos cards */
 .card-interactive {
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.25s ease;
-  will-change: transform, box-shadow;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+  will-change: transform;
 }
 
 .card-interactive:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: 0 16px 30px -8px rgba(0, 77, 97, 0.16);
   border-color: rgba(0, 77, 97, 0.45);
 }
@@ -107,35 +160,35 @@ html, body {
   box-shadow: 0 6px 14px -4px rgba(0, 77, 97, 0.18);
 }
 
-/* Card de produto interativo com zoom suave na imagem */
+/* Card de produto interativo */
 .product-card {
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.25s ease;
-  will-change: transform, box-shadow;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+  will-change: transform;
 }
 
 .product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 36px -8px rgba(0, 77, 97, 0.18);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -8px rgba(0, 77, 97, 0.16);
   border-color: rgba(0, 77, 97, 0.4);
 }
 
 .product-card:active {
-  transform: translateY(-2px) scale(0.985);
+  transform: translateY(-1px) scale(0.985);
 }
 
 .product-card img,
 .product-card .product-icon-wrap {
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .product-card:hover img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .product-card:hover .product-icon-wrap {
-  transform: scale(1.12) rotate(3deg);
+  transform: scale(1.1) rotate(3deg);
 }
 
 /* Links do menu com sublinhado magnético animado */
@@ -153,20 +206,61 @@ html, body {
   height: 2px;
   background-color: #ffffff;
   border-radius: 9999px;
-  transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), left 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), left 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.nav-link-anim:hover::after {
+.nav-link-anim:hover::after,
+.nav-link-anim.is-active::after {
   width: 100%;
   left: 0;
+}
+
+/* Dropdown de Produtos no cabeçalho (controlado via .is-open para fechar imediatamente ao clicar) */
+.nav-dropdown-panel {
+  display: none;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-dropdown-group.is-open .nav-dropdown-panel {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.nav-dropdown-group.is-open .nav-chevron {
+  transform: rotate(180deg);
+}
+
+/* Barra de rolagem personalizada para grupos de filtro da sidebar */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 77, 97, 0.35) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 77, 97, 0.3);
+  border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 77, 97, 0.55);
 }
 
 /* Bolinhas interativas do rodapé */
 .social-orb {
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.28s ease,
-              background-color 0.25s ease,
-              color 0.25s ease;
+              background-color 0.22s ease,
+              color 0.22s ease;
 }
 
 .social-orb:hover {
@@ -188,20 +282,20 @@ html, body {
 
 /* Botão flutuante de WhatsApp com pulso dinâmico */
 @keyframes pulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0.7); }
-  70% { box-shadow: 0 0 0 16px rgba(0, 77, 97, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0.65); }
+  70% { box-shadow: 0 0 0 15px rgba(0, 77, 97, 0); }
   100% { box-shadow: 0 0 0 0 rgba(0, 77, 97, 0); }
 }
 
 .whatsapp-float-anim {
-  animation: pulseRing 2.4s infinite cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pulseRing 2.5s infinite cubic-bezier(0.16, 1, 0.3, 1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
-              background-color 0.25s ease;
+              box-shadow 0.22s ease,
+              background-color 0.22s ease;
 }
 
 .whatsapp-float-anim:hover {
-  transform: translateY(-4px) scale(1.12);
+  transform: translateY(-4px) scale(1.1);
   box-shadow: 0 14px 28px -4px rgba(0, 77, 97, 0.45);
 }
 
@@ -225,27 +319,27 @@ html, body {
   display: inline-flex;
   align-items: center;
   transform-origin: center;
-  animation: logoEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              filter 0.25s ease;
+  animation: logoEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.24s ease;
   cursor: pointer;
 }
 
 .logo-anim:hover {
-  transform: translateY(-2px) scale(1.05);
-  filter: drop-shadow(0 6px 16px rgba(255, 255, 255, 0.35));
+  transform: translateY(-2px) scale(1.04);
+  filter: drop-shadow(0 6px 16px rgba(255, 255, 255, 0.32));
 }
 
 .logo-anim:active {
-  transform: translateY(1px) scale(0.96);
+  transform: translateY(1px) scale(0.97);
   filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.2));
 }
 
-/* Efeito de revelação Fade-In-Up para cards na rolagem */
+/* Efeito de revelação Fade-In-Up para seções e cards na rolagem */
 @keyframes fadeInUpStagger {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.96);
+    transform: translateY(24px) scale(0.97);
   }
   100% {
     opacity: 1;
@@ -255,11 +349,71 @@ html, body {
 
 .animate-fade-in-up {
   opacity: 0;
-  animation: fadeInUpStagger 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fadeInUpStagger 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: opacity, transform;
+}
+
+/* Hotspots SVG da Planta Interativa ("Casinha") */
+.svg-room-zone {
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.svg-room-zone:hover,
+.svg-room-zone:focus-visible,
+.svg-room-zone.is-hovered {
+  transform: translateY(-5px);
+  filter: drop-shadow(0 12px 18px rgba(0, 77, 97, 0.22));
+}
+
+.svg-room-zone .room-floor-highlight {
+  transition: fill 0.25s ease, fill-opacity 0.25s ease, stroke-width 0.25s ease;
+}
+
+.svg-room-zone:hover .room-floor-highlight,
+.svg-room-zone:focus-visible .room-floor-highlight,
+.svg-room-zone.is-hovered .room-floor-highlight {
+  fill: #004d61;
+  fill-opacity: 0.14;
+  stroke: #004d61;
+  stroke-width: 2.5;
+}
+
+.svg-room-pin {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-box: fill-box;
+  transform-origin: bottom center;
+}
+
+.svg-room-zone:hover .svg-room-pin,
+.svg-room-zone:focus-visible .svg-room-pin,
+.svg-room-zone.is-hovered .svg-room-pin {
+  transform: scale(1.14) translateY(-4px);
+}
+
+/* Barra horizontal de atalhos de cômodos sem barra de rolagem visível */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Efeito de iluminação radial na hero */
 .hero-glow-overlay {
-  background: radial-gradient(circle at 50% 38%, rgba(0, 77, 97, 0.6) 0%, rgba(0, 40, 51, 0.88) 65%, rgba(0, 32, 41, 0.96) 100%);
+  background: radial-gradient(circle at 50% 38%, rgba(0, 77, 97, 0.65) 0%, rgba(0, 44, 56, 0.9) 65%, rgba(0, 32, 41, 0.97) 100%);
+}
+
+/* Respeito a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
