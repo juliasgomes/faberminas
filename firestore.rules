@@ -170,7 +170,7 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow get: if isValidId(productId);
-      allow list: if resource.data.id is number;
+      allow list: if resource.data.id >= 1;
       allow create: if isValidId(productId)
         && isAdmin()
         && isValidProduct(incoming())
@@ -188,7 +188,7 @@ service cloud.firestore {
 
     match /banners/{bannerId} {
       allow get: if isValidId(bannerId);
-      allow list: if resource.data.kind in ['carousel', 'promotional', 'catalog'];
+      allow list: if resource.data.order >= 0;
       allow create: if isValidId(bannerId)
         && isAdmin()
         && isValidBanner(incoming());

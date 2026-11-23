@@ -4,7 +4,9 @@ import {
   doc,
   getDocs,
   onSnapshot,
-  setDoc
+  query,
+  setDoc,
+  where
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { BannerSlot, HeroSlide, Product, SiteData } from '../types';
@@ -347,7 +349,7 @@ export function subscribeToCloudSiteData(
   );
 
   const unsubProducts = onSnapshot(
-    collection(db, PRODUCTS_COLLECTION),
+    query(collection(db, PRODUCTS_COLLECTION), where('id', '>=', 1)),
     (snapshot) => {
       productsReady = true;
       const nextMap = new Map<number, Product>();
@@ -366,7 +368,7 @@ export function subscribeToCloudSiteData(
   );
 
   const unsubBanners = onSnapshot(
-    collection(db, BANNERS_COLLECTION),
+    query(collection(db, BANNERS_COLLECTION), where('order', '>=', 0)),
     (snapshot) => {
       bannersReady = true;
       const nextMap = new Map<string, CloudBannerDoc>();
@@ -448,7 +450,9 @@ export async function syncSiteDataDiffToCloud(
     const targetDocIds = new Set(targetBanners.map((b) => b.docId));
 
     try {
-      const existingSnap = await getDocs(collection(db, BANNERS_COLLECTION));
+      const existingSnap = await getDocs(
+        query(collection(db, BANNERS_COLLECTION), where('order', '>=', 0))
+      );
       for (const oldDoc of existingSnap.docs) {
         if (!targetDocIds.has(oldDoc.id)) {
           await deleteDoc(doc(db, BANNERS_COLLECTION, oldDoc.id));
@@ -473,7 +477,7 @@ export async function syncSiteDataDiffToCloud(
   try {
     const existingBannersSnap = bannersChanged
       ? null
-      : await getDocs(collection(db, BANNERS_COLLECTION));
+      : await getDocs(query(collection(db, BANNERS_COLLECTION), where('order', '>=', 0)));
     const bannersSynced =
       bannersChanged || Boolean(existingBannersSnap && existingBannersSnap.size > 0);
     await setDoc(
@@ -542,12 +546,16 @@ export async function pushAllCustomizationsToCloud(localData: SiteData): Promise
 
 export async function restoreCloudDefaults(): Promise<void> {
   try {
-    const productsSnap = await getDocs(collection(db, PRODUCTS_COLLECTION));
+    const productsSnap = await getDocs(
+      query(collection(db, PRODUCTS_COLLECTION), where('id', '>=', 1))
+    );
     for (const d of productsSnap.docs) {
       await deleteDoc(doc(db, PRODUCTS_COLLECTION, d.id));
     }
 
-    const bannersSnap = await getDocs(collection(db, BANNERS_COLLECTION));
+    const bannersSnap = await getDocs(
+      query(collection(db, BANNERS_COLLECTION), where('order', '>=', 0))
+    );
     for (const d of bannersSnap.docs) {
       await deleteDoc(doc(db, BANNERS_COLLECTION, d.id));
     }
