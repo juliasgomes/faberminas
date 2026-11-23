@@ -16,6 +16,7 @@ const SETTINGS_COLLECTION = 'site_settings';
 const SETTINGS_DOC_ID = 'global';
 const PRODUCTS_COLLECTION = 'products';
 const BANNERS_COLLECTION = 'banners';
+let knownCloudHasBanners = false;
 
 interface CloudSiteSettingsDoc {
   updatedAt?: number;
@@ -379,6 +380,7 @@ export function subscribeToCloudSiteData(
         }
       });
       bannerDocsMap = nextMap;
+      knownCloudHasBanners = Boolean(settingsDoc?.bannersSynced) || nextMap.size > 0;
       emitMerged();
     },
     (error) => {
@@ -475,11 +477,7 @@ export async function syncSiteDataDiffToCloud(
   // 3. Configurações globais (sempre atualiza para registrar updatedAt, deletedProductIds e bannersSynced)
   const settingsPath = `${SETTINGS_COLLECTION}/${SETTINGS_DOC_ID}`;
   try {
-    const existingBannersSnap = bannersChanged
-      ? null
-      : await getDocs(query(collection(db, BANNERS_COLLECTION), where('order', '>=', 0)));
-    const bannersSynced =
-      bannersChanged || Boolean(existingBannersSnap && existingBannersSnap.size > 0);
+    const bannersSynced = bannersChanged || knownCloudHasBanners;
     await setDoc(
       doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID),
       buildSettingsPayload(nextData, deletedProductIds, bannersSynced)
