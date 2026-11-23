@@ -54,27 +54,72 @@ export const HeroBannerCarousel: React.FC<HeroBannerCarouselProps> = ({
         style={{ transform: `translateX(-${safeIndex * 100}%)` }}
       >
         {activeSlides.map((slide, idx) => {
-          const hasImage = Boolean(slide.image) && !brokenSlideImages[slide.id];
+          const desktopCandidate = slide.image || slide.mobileImage || '';
+          const mobileCandidate = slide.mobileImage || slide.image || '';
+          const desktopSrc =
+            desktopCandidate && !brokenSlideImages[`${slide.id}:desktop`] ? desktopCandidate : '';
+          const mobileSrc =
+            mobileCandidate && !brokenSlideImages[`${slide.id}:mobile`] ? mobileCandidate : '';
+          const hasImage = Boolean(desktopSrc || mobileSrc);
+          const hasSeparateMobile = Boolean(
+            slide.mobileImage && slide.image && slide.mobileImage !== slide.image
+          );
           const showBtn = slide.showButton !== false;
           const hasTargetLink = Boolean((slide.ctaLink || '').trim());
           const makeWholeBannerClickable = !showBtn && hasTargetLink;
 
           const isExternal = hasTargetLink && /^https?:\/\//i.test(slide.ctaLink);
+          const imgHoverClass = makeWholeBannerClickable
+            ? 'transition-transform duration-500 group-hover:scale-[1.01]'
+            : '';
           const slideContent = hasImage ? (
             <>
-              <img
-                src={slide.image}
-                alt={slide.title || `Banner Faberminas ${idx + 1}`}
-                referrerPolicy="no-referrer"
-                onError={() =>
-                  setBrokenSlideImages((prev) => ({ ...prev, [slide.id]: true }))
-                }
-                className={`absolute inset-0 w-full h-full object-cover ${
-                  makeWholeBannerClickable
-                    ? 'transition-transform duration-500 group-hover:scale-[1.01]'
-                    : ''
-                }`}
-              />
+              {hasSeparateMobile ? (
+                <>
+                  {desktopSrc && (
+                    <img
+                      src={desktopSrc}
+                      alt={slide.title || `Banner Faberminas ${idx + 1}`}
+                      referrerPolicy="no-referrer"
+                      onError={() =>
+                        setBrokenSlideImages((prev) => ({
+                          ...prev,
+                          [`${slide.id}:desktop`]: true
+                        }))
+                      }
+                      className={`hidden md:block absolute inset-0 w-full h-full object-cover ${imgHoverClass}`}
+                    />
+                  )}
+                  {mobileSrc && (
+                    <img
+                      src={mobileSrc}
+                      alt={slide.title || `Banner Faberminas ${idx + 1}`}
+                      referrerPolicy="no-referrer"
+                      onError={() =>
+                        setBrokenSlideImages((prev) => ({
+                          ...prev,
+                          [`${slide.id}:mobile`]: true
+                        }))
+                      }
+                      className={`md:hidden absolute inset-0 w-full h-full object-cover ${imgHoverClass}`}
+                    />
+                  )}
+                </>
+              ) : (
+                <img
+                  src={desktopSrc || mobileSrc}
+                  alt={slide.title || `Banner Faberminas ${idx + 1}`}
+                  referrerPolicy="no-referrer"
+                  onError={() =>
+                    setBrokenSlideImages((prev) => ({
+                      ...prev,
+                      [`${slide.id}:desktop`]: true,
+                      [`${slide.id}:mobile`]: true
+                    }))
+                  }
+                  className={`absolute inset-0 w-full h-full object-cover ${imgHoverClass}`}
+                />
+              )}
               {(slide.title || slide.subtitle || (showBtn && slide.ctaLabel)) && (
                 <div className="absolute inset-0 bg-gradient-to-r from-[#002b36]/88 via-[#004d61]/65 to-transparent pointer-events-none" />
               )}

@@ -115,14 +115,15 @@ service cloud.firestore {
       return data.keys().hasAll(['id', 'kind', 'order', 'enabled', 'title', 'image'])
         && data.keys().hasOnly([
           'id', 'kind', 'order', 'enabled', 'title', 'subtitle',
-          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'updatedAt'
+          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'mobileImage', 'updatedAt'
         ])
         && isValidId(data.id)
         && data.kind is string && data.kind in ['carousel', 'promotional', 'catalog']
         && data.order is number && data.order >= 0
         && data.enabled is bool
         && data.title is string && data.title.size() <= 300
-        && data.image is string && data.image.size() <= 750000
+        && data.image is string && data.image.size() <= 550000
+        && isOptionalString(data, 'mobileImage', 550000)
         && isOptionalString(data, 'subtitle', 600)
         && isOptionalBool(data, 'showButton')
         && isOptionalString(data, 'ctaLabel', 120)
@@ -198,7 +199,7 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().diff(existing()).affectedKeys().hasOnly([
           'kind', 'order', 'enabled', 'title', 'subtitle',
-          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'updatedAt'
+          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'mobileImage', 'updatedAt'
         ]);
       allow delete: if isValidId(bannerId) && isAdmin();
     }

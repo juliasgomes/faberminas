@@ -1219,23 +1219,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         </div>
 
-                        {slide.image && (
-                          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
-                            <img
-                              src={slide.image}
-                              alt={slide.title || `Slide ${idx + 1}`}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                              className="w-full max-h-48 object-cover"
-                            />
+                        {(slide.image || slide.mobileImage) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {slide.image && (
+                              <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
+                                <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[10px] font-bold uppercase tracking-wider">
+                                  Computador
+                                </span>
+                                <img
+                                  src={slide.image}
+                                  alt={slide.title || `Slide ${idx + 1} Desktop`}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                  className="w-full max-h-44 object-cover"
+                                />
+                              </div>
+                            )}
+                            {slide.mobileImage && (
+                              <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
+                                <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-[#004d61]/90 text-white text-[10px] font-bold uppercase tracking-wider">
+                                  Celular
+                                </span>
+                                <img
+                                  src={slide.mobileImage}
+                                  alt={slide.title || `Slide ${idx + 1} Celular`}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                  className="w-full max-h-44 object-cover"
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1">
-                              Imagem do Slide (Opcional — arquivo Base64)
+                              Imagem Computador / Desktop (1600×450px)
                             </label>
                             <div className="flex items-center gap-2">
                               <input
@@ -1244,13 +1266,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onChange={async (e) => {
                                   const f = e.target.files?.[0];
                                   if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.80, 660000);
+                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.80, 440000);
                                     const next = siteData.banners.carousel.map((s) =>
                                       s.id === slide.id ? { ...s, image: dataUrl, enabled: true } : s
                                     );
                                     commitData(
                                       { ...siteData, banners: { ...siteData.banners, carousel: next } },
-                                      'Imagem do slide atualizada!'
+                                      'Imagem desktop do slide atualizada!'
                                     );
                                   }
                                   e.target.value = '';
@@ -1266,12 +1288,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     );
                                     commitData(
                                       { ...siteData, banners: { ...siteData.banners, carousel: next } },
-                                      'Imagem removida do slide.'
+                                      'Imagem desktop removida do slide.'
                                     );
                                   }}
                                   className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold shrink-0 cursor-pointer"
                                 >
-                                  Limpar Foto
+                                  Limpar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                              Imagem Celular / Mobile — Opcional (800×800px ou 1080×1350px)
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) {
+                                    const dataUrl = await compressImageToDataURL(f, 960, 0.80, 440000);
+                                    const next = siteData.banners.carousel.map((s) =>
+                                      s.id === slide.id ? { ...s, mobileImage: dataUrl, enabled: true } : s
+                                    );
+                                    commitData(
+                                      { ...siteData, banners: { ...siteData.banners, carousel: next } },
+                                      'Imagem celular do slide atualizada!'
+                                    );
+                                  }
+                                  e.target.value = '';
+                                }}
+                                className="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#004d61] file:text-white cursor-pointer"
+                              />
+                              {slide.mobileImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = siteData.banners.carousel.map((s) =>
+                                      s.id === slide.id ? { ...s, mobileImage: '' } : s
+                                    );
+                                    commitData(
+                                      { ...siteData, banners: { ...siteData.banners, carousel: next } },
+                                      'Imagem celular removida do slide.'
+                                    );
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold shrink-0 cursor-pointer"
+                                >
+                                  Limpar
                                 </button>
                               )}
                             </div>
@@ -1520,16 +1586,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                           </div>
 
-                          {slot.image ? (
-                            <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
-                              <img
-                                src={slot.image}
-                                alt={slot.title || `Banner ${idx + 1}`}
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                                className="w-full max-h-52 object-cover"
-                              />
+                          {(slot.image || slot.mobileImage) ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {slot.image && (
+                                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
+                                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[10px] font-bold uppercase tracking-wider">
+                                    Computador
+                                  </span>
+                                  <img
+                                    src={slot.image}
+                                    alt={slot.title || `Banner ${idx + 1} Desktop`}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                    className="w-full max-h-48 object-cover"
+                                  />
+                                </div>
+                              )}
+                              {slot.mobileImage && (
+                                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
+                                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-[#004d61]/90 text-white text-[10px] font-bold uppercase tracking-wider">
+                                    Celular
+                                  </span>
+                                  <img
+                                    src={slot.mobileImage}
+                                    alt={slot.title || `Banner ${idx + 1} Celular`}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                    className="w-full max-h-48 object-cover"
+                                  />
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">
@@ -1540,30 +1628,102 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                Enviar ou Substituir Imagem
+                                Imagem Computador / Desktop (1200×280px ou 800×360px)
                               </label>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={async (e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 660000);
-                                    const next = promoBanners.map((b, i) =>
-                                      i === idx ? { ...b, image: dataUrl, enabled: true } : b
-                                    );
-                                    commitData(
-                                      {
-                                        ...siteData,
-                                        banners: { ...siteData.banners, promotional: next }
-                                      },
-                                      'Imagem do banner atualizada!'
-                                    );
-                                  }
-                                  e.target.value = '';
-                                }}
-                                className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#004d61] file:text-white cursor-pointer"
-                              />
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) {
+                                      const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 440000);
+                                      const next = promoBanners.map((b, i) =>
+                                        i === idx ? { ...b, image: dataUrl, enabled: true } : b
+                                      );
+                                      commitData(
+                                        {
+                                          ...siteData,
+                                          banners: { ...siteData.banners, promotional: next }
+                                        },
+                                        'Imagem desktop do banner atualizada!'
+                                      );
+                                    }
+                                    e.target.value = '';
+                                  }}
+                                  className="w-full text-xs text-slate-600 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#004d61] file:text-white cursor-pointer"
+                                />
+                                {slot.image && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = promoBanners.map((b, i) =>
+                                        i === idx ? { ...b, image: '' } : b
+                                      );
+                                      commitData(
+                                        {
+                                          ...siteData,
+                                          banners: { ...siteData.banners, promotional: next }
+                                        },
+                                        'Imagem desktop removida!'
+                                      );
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold shrink-0 cursor-pointer"
+                                  >
+                                    Limpar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                Imagem Celular / Mobile — Opcional (800×800px ou 1080×1350px)
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) {
+                                      const dataUrl = await compressImageToDataURL(f, 960, 0.80, 440000);
+                                      const next = promoBanners.map((b, i) =>
+                                        i === idx ? { ...b, mobileImage: dataUrl, enabled: true } : b
+                                      );
+                                      commitData(
+                                        {
+                                          ...siteData,
+                                          banners: { ...siteData.banners, promotional: next }
+                                        },
+                                        'Imagem celular do banner atualizada!'
+                                      );
+                                    }
+                                    e.target.value = '';
+                                  }}
+                                  className="w-full text-xs text-slate-600 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#004d61] file:text-white cursor-pointer"
+                                />
+                                {slot.mobileImage && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = promoBanners.map((b, i) =>
+                                        i === idx ? { ...b, mobileImage: '' } : b
+                                      );
+                                      commitData(
+                                        {
+                                          ...siteData,
+                                          banners: { ...siteData.banners, promotional: next }
+                                        },
+                                        'Imagem celular removida!'
+                                      );
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold shrink-0 cursor-pointer"
+                                  >
+                                    Limpar
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
                             <div>
@@ -1731,16 +1891,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
 
-                    {slot.image ? (
-                      <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                        <img
-                          src={slot.image}
-                          alt={slot.title || 'Banner do catálogo'}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                          className="w-full max-h-52 object-cover"
-                        />
+                    {(slot.image || slot.mobileImage) ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {slot.image && (
+                          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[10px] font-bold uppercase tracking-wider">
+                              Computador
+                            </span>
+                            <img
+                              src={slot.image}
+                              alt={slot.title || 'Banner do catálogo Desktop'}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              className="w-full max-h-48 object-cover"
+                            />
+                          </div>
+                        )}
+                        {slot.mobileImage && (
+                          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-[#004d61]/90 text-white text-[10px] font-bold uppercase tracking-wider">
+                              Celular
+                            </span>
+                            <img
+                              src={slot.mobileImage}
+                              alt={slot.title || 'Banner do catálogo Celular'}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              className="w-full max-h-48 object-cover"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-[#F8FAFC] p-5 text-center text-sm text-slate-500">
@@ -1751,7 +1933,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Enviar ou Substituir Imagem
+                          Imagem Computador / Desktop (1200×280px)
                         </label>
                         <input
                           type="file"
@@ -1759,7 +1941,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onChange={async (e) => {
                             const f = e.target.files?.[0];
                             if (f) {
-                              const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 660000);
+                              const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 440000);
                               commitData(
                                 {
                                   ...siteData,
@@ -1768,7 +1950,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     catalog: { ...slot, image: dataUrl, enabled: true }
                                   }
                                 },
-                                'Banner atualizado com sucesso!'
+                                'Banner desktop atualizado com sucesso!'
+                              );
+                            }
+                            e.target.value = '';
+                          }}
+                          className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#004d61] file:text-white hover:file:bg-[#003a49] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Imagem Celular / Mobile — Opcional (800×800px ou 1080×1350px)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            if (f) {
+                              const dataUrl = await compressImageToDataURL(f, 960, 0.80, 440000);
+                              commitData(
+                                {
+                                  ...siteData,
+                                  banners: {
+                                    ...siteData.banners,
+                                    catalog: { ...slot, mobileImage: dataUrl, enabled: true }
+                                  }
+                                },
+                                'Banner celular atualizado com sucesso!'
                               );
                             }
                             e.target.value = '';
@@ -1870,7 +2080,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                           Salvar
                         </button>
-                        {slot.image && (
+                        {(slot.image || slot.mobileImage) && (
                           <button
                             type="button"
                             onClick={() =>
@@ -1882,6 +2092,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     catalog: {
                                       enabled: false,
                                       image: '',
+                                      mobileImage: '',
                                       title: '',
                                       linkUrl: '',
                                       showButton: false,

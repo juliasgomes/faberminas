@@ -222,7 +222,11 @@
         },
         "image": {
           "type": "string",
-          "maxLength": 750000
+          "maxLength": 550000
+        },
+        "mobileImage": {
+          "type": "string",
+          "maxLength": 550000
         },
         "updatedAt": {
           "type": "number"

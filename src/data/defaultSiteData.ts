@@ -202,7 +202,9 @@ export function mergeSiteDataWithDefaults(
   const normalizedPromotional = Array.isArray(rawBanners.promotional)
     ? rawBanners.promotional.map((b) => ({
         ...b,
-        image: sanitizeMediaString(b.image)
+        image: sanitizeMediaString(b.image),
+        mobileImage:
+          b.mobileImage !== undefined ? sanitizeMediaString(b.mobileImage) : ''
       }))
     : [rawBanners.secondary1, rawBanners.secondary2, rawBanners.home]
         .filter((b): b is NonNullable<typeof b> => Boolean(b && sanitizeMediaString(b.image)))
@@ -210,6 +212,8 @@ export function mergeSiteDataWithDefaults(
           id: b.id || `promo-${idx + 1}`,
           enabled: b.enabled !== false,
           image: sanitizeMediaString(b.image),
+          mobileImage:
+            b.mobileImage !== undefined ? sanitizeMediaString(b.mobileImage) : '',
           title: b.title || '',
           linkUrl: b.linkUrl || '',
           showButton: Boolean(b.showButton),
@@ -253,6 +257,8 @@ export function mergeSiteDataWithDefaults(
           ? rawBanners.carousel.map((s) => ({
               ...s,
               image: sanitizeMediaString(s.image),
+              mobileImage:
+                s.mobileImage !== undefined ? sanitizeMediaString(s.mobileImage) : '',
               showButton: s.showButton !== false
             }))
           : base.banners.carousel,
@@ -263,7 +269,11 @@ export function mergeSiteDataWithDefaults(
         image:
           rawBanners.catalog?.image !== undefined
             ? sanitizeMediaString(rawBanners.catalog.image)
-            : base.banners.catalog.image
+            : base.banners.catalog.image,
+        mobileImage:
+          rawBanners.catalog?.mobileImage !== undefined
+            ? sanitizeMediaString(rawBanners.catalog.mobileImage)
+            : base.banners.catalog.mobileImage || ''
       }
     }
   };

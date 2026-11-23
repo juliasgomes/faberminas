@@ -90,7 +90,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   useEffect(() => {
     setCatalogBannerBroken(false);
-  }, [bannerCatalog?.image]);
+  }, [bannerCatalog?.image, bannerCatalog?.mobileImage]);
 
   const whatsDigits = onlyDigits(whatsapp);
 
@@ -504,10 +504,50 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Banner Promocional Dinâmico do Catálogo (oculto se sem imagem ou erro de carregamento) */}
-        {bannerCatalog?.enabled && bannerCatalog?.image && !catalogBannerBroken && (() => {
+        {bannerCatalog?.enabled && (bannerCatalog?.image || bannerCatalog?.mobileImage) && !catalogBannerBroken && (() => {
           const hasLink = Boolean(bannerCatalog.linkUrl && bannerCatalog.linkUrl.trim());
           const showBtn = Boolean(bannerCatalog.showButton && hasLink);
           const isExternal = hasLink && /^https?:\/\//i.test(bannerCatalog.linkUrl);
+          const desktopSrc = bannerCatalog.image || bannerCatalog.mobileImage || '';
+          const mobileSrc = bannerCatalog.mobileImage || bannerCatalog.image || '';
+          const hasSeparateMobile = Boolean(
+            bannerCatalog.mobileImage &&
+            bannerCatalog.image &&
+            bannerCatalog.mobileImage !== bannerCatalog.image
+          );
+
+          const renderBannerMedia = (hoverZoom: boolean) => {
+            const zoomCls = hoverZoom ? 'transition-transform duration-500 group-hover:scale-[1.01]' : '';
+            if (hasSeparateMobile) {
+              return (
+                <>
+                  <img
+                    src={desktopSrc}
+                    alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setCatalogBannerBroken(true)}
+                    className={`hidden md:block w-full max-h-72 object-cover ${zoomCls}`}
+                  />
+                  <img
+                    src={mobileSrc}
+                    alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setCatalogBannerBroken(true)}
+                    className={`md:hidden w-full max-h-80 object-cover ${zoomCls}`}
+                  />
+                </>
+              );
+            }
+            return (
+              <img
+                src={desktopSrc}
+                alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
+                referrerPolicy="no-referrer"
+                onError={() => setCatalogBannerBroken(true)}
+                className={`w-full max-h-60 sm:max-h-72 object-cover ${zoomCls}`}
+              />
+            );
+          };
 
           if (hasLink && !showBtn) {
             return (
@@ -525,13 +565,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   aria-label={bannerCatalog.title || 'Destaque promocional Faberminas'}
                   className="block w-full cursor-pointer"
                 >
-                  <img
-                    src={bannerCatalog.image}
-                    alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
-                    referrerPolicy="no-referrer"
-                    onError={() => setCatalogBannerBroken(true)}
-                    className="w-full max-h-60 sm:max-h-72 object-cover transition-transform duration-500 group-hover:scale-[1.01]"
-                  />
+                  {renderBannerMedia(true)}
                 </a>
               </div>
             );
@@ -539,13 +573,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
           return (
             <div className="relative rounded-2xl overflow-hidden border border-[#004d61]/15 shadow-md bg-white">
-              <img
-                src={bannerCatalog.image}
-                alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
-                referrerPolicy="no-referrer"
-                onError={() => setCatalogBannerBroken(true)}
-                className="w-full max-h-60 sm:max-h-72 object-cover"
-              />
+              {renderBannerMedia(false)}
               {showBtn && (
                 <div className="absolute inset-0 bg-gradient-to-t from-[#002b36]/70 via-transparent to-transparent flex items-end p-5 sm:p-7">
                   <button

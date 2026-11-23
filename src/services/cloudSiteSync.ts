@@ -57,6 +57,7 @@ interface CloudBannerDoc {
   ctaLink?: string;
   linkUrl?: string;
   image: string;
+  mobileImage?: string;
   updatedAt?: number;
 }
 
@@ -160,7 +161,8 @@ function buildBannerEntries(data: SiteData, now: number): { docId: string; paylo
         showButton: slide.showButton !== false,
         ctaLabel: clampStr(slide.ctaLabel, 120),
         ctaLink: clampStr(slide.ctaLink, 500),
-        image: clampStr(slide.image, 750000),
+        image: clampStr(slide.image, 480000),
+        mobileImage: clampStr(slide.mobileImage, 480000),
         updatedAt: now
       }
     });
@@ -180,7 +182,8 @@ function buildBannerEntries(data: SiteData, now: number): { docId: string; paylo
         linkUrl: clampStr(slot.linkUrl, 500),
         showButton: Boolean(slot.showButton),
         ctaLabel: clampStr(slot.ctaLabel, 120),
-        image: clampStr(slot.image, 750000),
+        image: clampStr(slot.image, 480000),
+        mobileImage: clampStr(slot.mobileImage, 480000),
         updatedAt: now
       }
     });
@@ -199,7 +202,8 @@ function buildBannerEntries(data: SiteData, now: number): { docId: string; paylo
         linkUrl: clampStr(catBanner.linkUrl, 500),
         showButton: Boolean(catBanner.showButton),
         ctaLabel: clampStr(catBanner.ctaLabel, 120),
-        image: clampStr(catBanner.image, 750000),
+        image: clampStr(catBanner.image, 480000),
+        mobileImage: clampStr(catBanner.mobileImage, 480000),
         updatedAt: now
       }
     });
@@ -283,7 +287,8 @@ export function subscribeToCloudSiteData(
             showButton: b.showButton !== false,
             ctaLabel: b.ctaLabel || '',
             ctaLink: b.ctaLink || '#/produtos',
-            image: b.image || ''
+            image: b.image || '',
+            mobileImage: b.mobileImage || ''
           })
         );
 
@@ -295,6 +300,7 @@ export function subscribeToCloudSiteData(
             id: b.id,
             enabled: b.enabled !== false,
             image: b.image || '',
+            mobileImage: b.mobileImage || '',
             title: b.title || '',
             linkUrl: b.linkUrl || '',
             showButton: Boolean(b.showButton),
@@ -307,6 +313,7 @@ export function subscribeToCloudSiteData(
         ? {
             enabled: Boolean(catBannerDoc.enabled),
             image: catBannerDoc.image || '',
+            mobileImage: catBannerDoc.mobileImage || '',
             title: catBannerDoc.title || '',
             linkUrl: catBannerDoc.linkUrl || '',
             showButton: Boolean(catBannerDoc.showButton),

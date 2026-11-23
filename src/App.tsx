@@ -177,6 +177,10 @@ export default function App() {
     setBrokenAboutImage(false);
   }, [siteData.aboutUsImage]);
 
+  useEffect(() => {
+    setBrokenPromoImages({});
+  }, [siteData.banners.promotional]);
+
   // Manter título SEO completo e URL canônica/OpenGraph sem sobrescrever os favicons multi-formato
   useEffect(() => {
     document.title = 'Faberminas';
@@ -720,7 +724,11 @@ export default function App() {
 
     const isCatalogView = currentRoute.startsWith('#/produtos');
     const promotionalBanners = (siteData.banners.promotional || []).filter(
-      (slot) => slot && slot.enabled && slot.image && !brokenPromoImages[slot.id || slot.image]
+      (slot) =>
+        slot &&
+        slot.enabled &&
+        (Boolean(slot.image) || Boolean(slot.mobileImage)) &&
+        !brokenPromoImages[slot.id || slot.image || slot.mobileImage || '']
     );
     const hasSecondaryBanners = promotionalBanners.length > 0;
     const effectiveLogoSrc =
@@ -1280,6 +1288,62 @@ export default function App() {
                       const hasLink = Boolean(slot.linkUrl && slot.linkUrl.trim());
                       const showBtn = Boolean(slot.showButton && hasLink);
                       const isExternal = hasLink && /^https?:\/\//i.test(slot.linkUrl);
+                      const desktopSrc = slot.image || slot.mobileImage || '';
+                      const mobileSrc = slot.mobileImage || slot.image || '';
+                      const hasSeparateMobile = Boolean(
+                        slot.mobileImage && slot.image && slot.mobileImage !== slot.image
+                      );
+                      const promoKey = slot.id || slot.image || slot.mobileImage || `promo-${idx}`;
+
+                      const renderPromoMedia = (hoverZoom: boolean) => {
+                        const zoomCls = hoverZoom
+                          ? 'transition-transform duration-500 group-hover:scale-[1.01]'
+                          : '';
+                        if (hasSeparateMobile) {
+                          return (
+                            <>
+                              <img
+                                src={desktopSrc}
+                                alt={slot.title || `Campanha Faberminas ${idx + 1}`}
+                                referrerPolicy="no-referrer"
+                                onError={() =>
+                                  setBrokenPromoImages((prev) => ({
+                                    ...prev,
+                                    [promoKey]: true
+                                  }))
+                                }
+                                className={`hidden md:block w-full max-h-72 object-cover ${zoomCls}`}
+                              />
+                              <img
+                                src={mobileSrc}
+                                alt={slot.title || `Campanha Faberminas ${idx + 1}`}
+                                referrerPolicy="no-referrer"
+                                onError={() =>
+                                  setBrokenPromoImages((prev) => ({
+                                    ...prev,
+                                    [promoKey]: true
+                                  }))
+                                }
+                                className={`md:hidden w-full max-h-80 object-cover ${zoomCls}`}
+                              />
+                            </>
+                          );
+                        }
+                        return (
+                          <img
+                            src={desktopSrc}
+                            alt={slot.title || `Campanha Faberminas ${idx + 1}`}
+                            referrerPolicy="no-referrer"
+                            onError={() =>
+                              setBrokenPromoImages((prev) => ({
+                                ...prev,
+                                [promoKey]: true
+                              }))
+                            }
+                            className={`w-full max-h-72 object-cover ${zoomCls}`}
+                          />
+                        );
+                      };
 
                       return (
                         <div
@@ -1300,33 +1364,11 @@ export default function App() {
                               className="block w-full cursor-pointer focus:outline-none"
                               aria-label={slot.title || `Campanha Faberminas ${idx + 1}`}
                             >
-                              <img
-                                src={slot.image}
-                                alt={slot.title || `Campanha Faberminas ${idx + 1}`}
-                                referrerPolicy="no-referrer"
-                                onError={() =>
-                                  setBrokenPromoImages((prev) => ({
-                                    ...prev,
-                                    [slot.id || slot.image]: true
-                                  }))
-                                }
-                                className="w-full max-h-72 object-cover transition-transform duration-500 group-hover:scale-[1.01]"
-                              />
+                              {renderPromoMedia(true)}
                             </a>
                           ) : (
                             <>
-                              <img
-                                src={slot.image}
-                                alt={slot.title || `Campanha Faberminas ${idx + 1}`}
-                                referrerPolicy="no-referrer"
-                                onError={() =>
-                                  setBrokenPromoImages((prev) => ({
-                                    ...prev,
-                                    [slot.id || slot.image]: true
-                                  }))
-                                }
-                                className="w-full max-h-72 object-cover"
-                              />
+                              {renderPromoMedia(false)}
                               {showBtn && (
                                 <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 bg-gradient-to-t from-[#002b36]/80 via-[#002b36]/30 to-transparent flex items-end justify-between gap-3">
                                   {slot.title && (

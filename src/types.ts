@@ -45,6 +45,7 @@ export interface BannerSlot {
   id?: string;
   enabled: boolean;
   image: string;
+  mobileImage?: string;
   title: string;
   linkUrl: string;
   showButton?: boolean;
@@ -60,6 +61,7 @@ export interface HeroSlide {
   ctaLabel: string;
   ctaLink: string;
   image: string;
+  mobileImage?: string;
 }
 
 export interface SiteData {
