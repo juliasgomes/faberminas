@@ -21,8 +21,13 @@ import {
   Plus,
   GripVertical,
   AlertTriangle,
-  Globe
+  Globe,
+  Cloud,
+  CloudUpload,
+  LogOut
 } from 'lucide-react';
+import { User } from 'firebase/auth';
+import { CloudSnapshotState } from '../services/cloudSiteSync';
 import { BannerSlot, Category, HeroSlide, Product, RoomZone, SiteData } from '../types';
 import {
   ADMIN_SYNC_META_KEY,
@@ -47,20 +52,41 @@ type AdminTab = 'produtos' | 'banners' | 'taxonomy' | 'institucional' | 'deploy'
 
 interface AdminDashboardProps {
   siteData: SiteData;
-  onUpdateSiteData: (nextData: SiteData, message?: string) => void;
-  onRestoreDefaults: () => void;
+  onUpdateSiteData: (nextData: SiteData, commitToCloud?: boolean) => void;
+  onRestoreDefaults: () => void | Promise<void>;
   onExitAdmin: () => void;
+  authUser: User | null;
+  isCloudAdmin: boolean;
+  authReady: boolean;
+  cloudMeta: CloudSnapshotState;
+  cloudSyncStatus: 'idle' | 'saving' | 'saved' | 'error';
+  cloudSyncError: string | null;
+  onGoogleSignIn: () => Promise<void>;
+  onGoogleSignOut: () => Promise<void>;
+  onSyncAllToCloud: () => Promise<void>;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   siteData,
   onUpdateSiteData,
   onRestoreDefaults,
-  onExitAdmin
+  onExitAdmin,
+  authUser,
+  isCloudAdmin,
+  authReady,
+  cloudMeta,
+  cloudSyncStatus,
+  cloudSyncError,
+  onGoogleSignIn,
+  onGoogleSignOut,
+  onSyncAllToCloud
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState(false);
+  const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
+  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('produtos');
   const [toast, setToast] = useState<string | null>(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
@@ -134,13 +160,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const commitData = (next: SiteData, msg: string) => {
-    onUpdateSiteData({ ...next, updatedAt: Date.now() });
+    onUpdateSiteData({ ...next, updatedAt: Date.now() }, true);
     showAdminToast(msg);
   };
 
   const updateDraft = (next: SiteData) => {
-    onUpdateSiteData({ ...next, updatedAt: Date.now() });
+    onUpdateSiteData({ ...next, updatedAt: Date.now() }, false);
   };
+
+  const handleGoogleConnect = async () => {
+    setGoogleAuthLoading(true);
+    setGoogleAuthError(null);
+    try {
+      await onGoogleSignIn();
+      setIsAuthenticated(true);
+      showAdminToast('Conta Google conectada! Sincronização em nuvem ativada.');
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível concluir o login com Google.';
+      setGoogleAuthError(msg);
+      showAdminToast(msg);
+    } finally {
+      setGoogleAuthLoading(false);
+    }
+  };
+
+  const handleForceCloudSync = async () => {
+    setSyncingAll(true);
+    try {
+      await onSyncAllToCloud();
+      showAdminToast('Todas as fotos e alterações foram publicadas na nuvem!');
+    } catch (err) {
+      showAdminToast(
+        err instanceof Error ? err.message : 'Erro ao sincronizar com a nuvem.'
+      );
+    } finally {
+      setSyncingAll(false);
+    }
+  };
+
+  const effectiveAuthenticated = isAuthenticated || isCloudAdmin;
 
   const canonicalUpdatedAt = Number(INITIAL_SITE_DATA.updatedAt || 0);
   const localUpdatedAt = Number(siteData.updatedAt || 0);
@@ -375,16 +436,62 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {!isAuthenticated ? (
-        <div className="max-w-md mx-auto mt-16 sm:mt-24 px-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#004d61] text-white flex items-center justify-center mx-auto mb-4">
+      {!effectiveAuthenticated ? (
+        <div className="max-w-md mx-auto mt-12 sm:mt-20 px-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 sm:p-8 text-center space-y-5">
+            <div className="w-12 h-12 rounded-xl bg-[#004d61] text-white flex items-center justify-center mx-auto">
               <Lock className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Acesso Restrito</h1>
-            <p className="text-sm text-slate-500 mb-6">
-              Digite a senha de administrador para gerenciar produtos, carrossel, banners, cômodos e gerar o site atualizado.
-            </p>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1.5">Acesso Administrativo</h1>
+              <p className="text-sm text-slate-500">
+                Entre com sua conta Google autorizada para salvar fotos, banners e produtos diretamente na nuvem (visível em todos os dispositivos e navegadores).
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                disabled={!authReady || googleAuthLoading}
+                onClick={handleGoogleConnect}
+                className="w-full py-3 px-4 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-semibold text-sm transition cursor-pointer flex items-center justify-center gap-2.5 shadow-sm disabled:opacity-60"
+              >
+                <Cloud className="w-4 h-4" />
+                <span>
+                  {googleAuthLoading
+                    ? 'Conectando...'
+                    : 'Entrar com Google (Sincronização na Nuvem)'}
+                </span>
+              </button>
+
+              {authUser && !isCloudAdmin && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 text-left space-y-2">
+                  <p>
+                    Você está conectado como <strong>{authUser.email}</strong>, que não possui permissão de administrador.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void onGoogleSignOut()}
+                    className="underline font-semibold text-[#004d61] cursor-pointer"
+                  >
+                    Trocar de conta Google
+                  </button>
+                </div>
+              )}
+
+              {googleAuthError && (
+                <p className="text-xs text-red-600 font-semibold text-left">{googleAuthError}</p>
+              )}
+            </div>
+
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-slate-200" />
+              <span className="shrink mx-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                ou senha local
+              </span>
+              <div className="flex-grow border-t border-slate-200" />
+            </div>
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -395,17 +502,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setLoginError(true);
                 }
               }}
-              className="space-y-4 text-left"
+              className="space-y-3 text-left"
             >
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Senha (apenas preview local se não estiver conectado ao Google)
+                </label>
                 <input
                   type="password"
                   required
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61] focus:ring-2 focus:ring-[#004d61]/20"
                 />
               </div>
               {loginError && (
@@ -413,64 +522,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               )}
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-semibold text-sm transition cursor-pointer"
+                className="w-full py-2.5 rounded-xl border border-slate-300 hover:border-[#004d61] text-slate-700 hover:text-[#004d61] font-semibold text-sm transition cursor-pointer"
               >
-                Entrar no Painel
+                Entrar com Senha
               </button>
             </form>
           </div>
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          {/* Indicador de Sincronização (Preview Local vs Produção Global) */}
+          {/* Indicador de Sincronização em Nuvem (Multi-Dispositivo e Multi-Navegador) */}
           <div
             className={`rounded-2xl border p-4 sm:px-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
-              hasUnexportedLocalChanges
+              !isCloudAdmin
                 ? 'bg-amber-50 border-amber-300 text-amber-950'
-                : 'bg-[#eef5f7] border-[#004d61]/25 text-[#004d61]'
+                : cloudSyncStatus === 'error'
+                  ? 'bg-red-50 border-red-300 text-red-950'
+                  : 'bg-[#eef5f7] border-[#004d61]/25 text-[#004d61]'
             }`}
           >
             <div className="flex items-start gap-3">
-              {hasUnexportedLocalChanges ? (
+              {!isCloudAdmin ? (
                 <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              ) : cloudSyncStatus === 'error' ? (
+                <AlertTriangle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
               ) : (
                 <Globe className="w-5 h-5 text-[#004d61] shrink-0 mt-0.5" />
               )}
               <div>
                 <p className="text-sm font-bold">
-                  {hasUnexportedLocalChanges
-                    ? 'Alterações no Preview Local (ainda não publicadas para outros dispositivos)'
-                    : 'Sincronizado com o arquivo exportado / produção'}
+                  {!isCloudAdmin
+                    ? 'Modo Local (apenas neste navegador — ainda não sincronizado com a nuvem)'
+                    : cloudSyncStatus === 'saving'
+                      ? 'Salvando alterações na nuvem...'
+                      : cloudSyncStatus === 'error'
+                        ? 'Erro ao salvar na nuvem'
+                        : 'Sincronização em Nuvem Ativa (Todos os dispositivos e navegadores)'}
                 </p>
                 <p className="text-xs opacity-90 mt-0.5">
-                  {hasUnexportedLocalChanges
-                    ? 'As alterações feitas aqui ficam visíveis apenas neste navegador até você baixar o index.html atualizado ou exportar o site-config.json.'
-                    : exportMeta.lastExportedAt > 0
-                      ? `Última exportação (${exportMeta.lastExportedType === 'json' ? 'site-config.json' : 'index.html'}) em ${new Date(exportMeta.lastExportedAt).toLocaleString('pt-BR')}.`
-                      : 'Estado atual em sincronia com a configuração global padrão do site.'}
+                  {!isCloudAdmin
+                    ? 'Conecte sua conta Google autorizada para que as fotos e edições salvas apareçam imediatamente em celulares, outros computadores e navegadores.'
+                    : cloudSyncStatus === 'error'
+                      ? cloudSyncError || 'Verifique sua conexão e tente clicar em Sincronizar Agora.'
+                      : `Conectado como ${authUser?.email || 'Administrador'}. Toda foto ou alteração salva aparece em tempo real em todos os dispositivos (${cloudMeta.productDocsCount} produtos e ${cloudMeta.bannerDocsCount} banners na nuvem).`}
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                disabled={exportingHtml}
-                onClick={handleDownloadHtml}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white text-xs font-bold cursor-pointer disabled:opacity-60"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>
-                  {exportingHtml ? 'Gerando...' : 'Salvar e Baixar Site Atualizado (.html)'}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('deploy')}
-                className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-[#004d61] text-slate-800 text-xs font-semibold cursor-pointer"
-              >
-                Configuração / Deploy
-              </button>
+              {!isCloudAdmin ? (
+                <button
+                  type="button"
+                  disabled={googleAuthLoading}
+                  onClick={handleGoogleConnect}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white text-xs font-bold cursor-pointer disabled:opacity-60"
+                >
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span>{googleAuthLoading ? 'Conectando...' : 'Conectar Google para Salvar na Nuvem'}</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={syncingAll}
+                    onClick={handleForceCloudSync}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white text-xs font-bold cursor-pointer disabled:opacity-60"
+                  >
+                    <CloudUpload className="w-3.5 h-3.5" />
+                    <span>{syncingAll ? 'Sincronizando...' : 'Sincronizar Tudo com a Nuvem'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onGoogleSignOut()}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-300 hover:border-red-300 hover:text-red-700 text-slate-700 text-xs font-semibold cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sair</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -725,7 +855,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 720, 0.82);
+                          const dataUrl = await compressImageToDataURL(f, 720, 0.80, 620000);
                           setProdFormImageUrl(dataUrl);
                         }
                         e.target.value = '';
@@ -915,7 +1045,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === 'banners' && (
             <div className="space-y-6">
               <div className="bg-[#eef5f7] border border-[#004d61]/20 rounded-2xl p-5 text-sm text-[#004d61]">
-                <strong>Persistência Multi-Dispositivo:</strong> Envie imagens (comprimidas automaticamente em Base64), adicione múltiplos banners, configure links internos ou externos e controle se o botão aparece sobre a imagem (&ldquo;Mostrar botão no banner&rdquo;). Ao baixar o arquivo <strong>index.html</strong> na aba &ldquo;Persistência &amp; Deploy&rdquo;, tudo fica salvo para qualquer dispositivo.
+                <strong>Persistência Multi-Dispositivo em Nuvem:</strong> Envie imagens (comprimidas automaticamente), adicione múltiplos banners, configure links internos ou externos e controle se o botão aparece sobre a imagem. Quando conectado com sua conta Google administradora, tudo fica salvo automaticamente no banco em nuvem e aparece em qualquer celular, navegador ou computador.
               </div>
 
               {/* Gerenciador do Carrossel Hero */}
@@ -1056,7 +1186,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onChange={async (e) => {
                                   const f = e.target.files?.[0];
                                   if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.82);
+                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.80, 660000);
                                     const next = siteData.banners.carousel.map((s) =>
                                       s.id === slide.id ? { ...s, image: dataUrl, enabled: true } : s
                                     );
@@ -1360,7 +1490,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onChange={async (e) => {
                                   const f = e.target.files?.[0];
                                   if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1400, 0.82);
+                                    const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 660000);
                                     const next = promoBanners.map((b, i) =>
                                       i === idx ? { ...b, image: dataUrl, enabled: true } : b
                                     );
@@ -1571,7 +1701,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onChange={async (e) => {
                             const f = e.target.files?.[0];
                             if (f) {
-                              const dataUrl = await compressImageToDataURL(f, 1400, 0.82);
+                              const dataUrl = await compressImageToDataURL(f, 1400, 0.80, 660000);
                               commitData(
                                 {
                                   ...siteData,
@@ -2085,7 +2215,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 800, 0.82);
+                          const dataUrl = await compressImageToDataURL(f, 800, 0.82, 200000);
                           commitData({ ...siteData, logoDataUrl: dataUrl }, 'Logo atualizada!');
                         }
                         e.target.value = '';
@@ -2158,7 +2288,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 1200, 0.82);
+                          const dataUrl = await compressImageToDataURL(f, 1200, 0.80, 480000);
                           commitData(
                             { ...siteData, aboutUsImage: dataUrl },
                             'Imagem da seção Sobre Nós atualizada!'
@@ -2368,40 +2498,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="bg-white border-2 border-[#004d61] rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#004d61] bg-[#eef5f7] px-3 py-1 rounded-lg">
-                    Persistência Global Cross-Device
+                    Sincronização em Nuvem + Backup Estático
                   </span>
                   <span
                     className={`text-xs font-semibold px-3 py-1 rounded-lg ${
-                      hasUnexportedLocalChanges
-                        ? 'bg-amber-100 text-amber-900'
-                        : 'bg-emerald-50 text-emerald-800'
+                      isCloudAdmin
+                        ? 'bg-emerald-50 text-emerald-800'
+                        : hasUnexportedLocalChanges
+                          ? 'bg-amber-100 text-amber-900'
+                          : 'bg-emerald-50 text-emerald-800'
                     }`}
                   >
-                    {hasUnexportedLocalChanges
-                      ? 'Status: Edições locais pendentes de exportação'
-                      : 'Status: Sincronizado'}
+                    {isCloudAdmin
+                      ? 'Nuvem conectada: sincronização automática ativa'
+                      : hasUnexportedLocalChanges
+                        ? 'Status: Apenas local (conecte o Google acima)'
+                        : 'Status: Sincronizado'}
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   <h2 className="text-xl font-extrabold text-[#004d61]">
-                    Salvar e Publicar para Todos os Dispositivos (.html)
+                    Sincronização em Nuvem e Exportação (.html)
                   </h2>
                   <p className="text-sm text-slate-600 leading-relaxed max-w-3xl">
-                    O botão abaixo gera um arquivo <strong>index.html</strong> autônomo com todo o estado global embutido diretamente em <code>INITIAL_SITE_DATA</code> (banners, carrossel, foto de Sobre Nós, produtos, SKUs, categorias e contatos em Base64). Ao subir esse arquivo na sua hospedagem, qualquer celular ou computador abrirá o site exatamente como você salvou — sem depender de cache local.
+                    Com sua conta Google administradora conectada no topo do painel, todas as fotos de produtos, banners e textos são salvos automaticamente no Firebase Firestore e aparecem instantaneamente em qualquer celular, computador ou navegador. Se desejar gerar uma cópia estática offline para hospedagem externa, use o botão abaixo.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                  {isCloudAdmin && (
+                    <button
+                      type="button"
+                      disabled={syncingAll}
+                      onClick={handleForceCloudSync}
+                      className="btn-anim inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-bold text-sm shadow-md cursor-pointer disabled:opacity-60"
+                    >
+                      <CloudUpload className="w-4 h-4" />
+                      <span>
+                        {syncingAll ? 'Sincronizando...' : 'Sincronizar Tudo com a Nuvem Agora'}
+                      </span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={exportingHtml}
                     onClick={handleDownloadHtml}
-                    className="btn-anim inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white font-bold text-sm shadow-md cursor-pointer disabled:opacity-60"
+                    className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-[#004d61] text-[#004d61] hover:bg-[#eef5f7] font-bold text-sm cursor-pointer disabled:opacity-60"
                   >
                     <Download className="w-4 h-4" />
                     <span>
-                      {exportingHtml ? 'Gerando arquivo...' : 'Salvar e Baixar Site Atualizado (.html)'}
+                      {exportingHtml ? 'Gerando arquivo...' : 'Baixar Cópia Estática (.html)'}
                     </span>
                   </button>
                 </div>

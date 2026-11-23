@@ -49,11 +49,19 @@ export function resolveLogoSrc(logoDataUrl?: string): string {
   return `${CLEAN_BASE}${raw.replace(/^\.\//, '')}`.replace(/([^:]\/)\/+/g, '$1');
 }
 
-export function compressImageToDataURL(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+export function compressImageToDataURL(
+  file: File,
+  maxWidth = 1200,
+  quality = 0.82,
+  maxChars = 640000
+): Promise<string> {
   return new Promise((resolve) => {
     if (file.type === 'image/svg+xml') {
       const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string) || '');
+      reader.onload = () => {
+        const res = (reader.result as string) || '';
+        resolve(res.length <= maxChars ? res : '');
+      };
       reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
       return;
@@ -63,32 +71,44 @@ export function compressImageToDataURL(file: File, maxWidth = 1200, quality = 0.
       const originalDataUrl = (event.target?.result as string) || '';
       const img = new Image();
       img.onload = () => {
-        let width = img.width || maxWidth;
-        let height = img.height || maxWidth;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, width);
-        canvas.height = Math.max(1, height);
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // Preferir WebP (mantém transparência e comprime banners/fotos com alta fidelidade)
-          const webpUrl = canvas.toDataURL('image/webp', quality);
-          if (webpUrl && webpUrl.startsWith('data:image/webp')) {
-            resolve(webpUrl);
-            return;
+        const renderAt = (targetWidth: number, targetQuality: number): string => {
+          let width = img.width || targetWidth;
+          let height = img.height || targetWidth;
+          if (width > targetWidth) {
+            height = Math.round((height * targetWidth) / width);
+            width = targetWidth;
           }
-          // Fallback caso o navegador não encode WebP
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, width);
+          canvas.height = Math.max(1, height);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return originalDataUrl;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const webpUrl = canvas.toDataURL('image/webp', targetQuality);
+          if (webpUrl && webpUrl.startsWith('data:image/webp')) {
+            return webpUrl;
+          }
           const fallbackMime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          resolve(canvas.toDataURL(fallbackMime, quality));
-        } else {
-          resolve(originalDataUrl);
+          const fallbackUrl = canvas.toDataURL(fallbackMime, targetQuality);
+          if (fallbackUrl.length > maxChars && fallbackMime === 'image/png') {
+            return canvas.toDataURL('image/jpeg', targetQuality);
+          }
+          return fallbackUrl;
+        };
+
+        let currentWidth = maxWidth;
+        let currentQuality = quality;
+        let result = renderAt(currentWidth, currentQuality);
+
+        for (let attempt = 0; attempt < 5 && result.length > maxChars; attempt += 1) {
+          currentQuality = Math.max(0.45, currentQuality - 0.12);
+          currentWidth = Math.max(480, Math.round(currentWidth * 0.78));
+          result = renderAt(currentWidth, currentQuality);
         }
+
+        resolve(result.length <= maxChars ? result : result.slice(0, maxChars));
       };
-      img.onerror = () => resolve(originalDataUrl);
+      img.onerror = () => resolve(originalDataUrl.length <= maxChars ? originalDataUrl : '');
       img.src = originalDataUrl;
     };
     reader.onerror = () => resolve('');

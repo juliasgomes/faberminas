@@ -1,0 +1,216 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =====================================================================
+    // Primitives
+    // =====================================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'julia.sggomes@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isOptionalNumber(data, field) {
+      return !(field in data) || data[field] is number;
+    }
+
+    function isOptionalBool(data, field) {
+      return !(field in data) || data[field] is bool;
+    }
+
+    // =====================================================================
+    // Validation Blueprints
+    // =====================================================================
+    function isValidSiteSettings(data) {
+      return data.keys().hasAll([
+          'legalName', 'cnpj', 'address', 'phone', 'whatsapp', 'email',
+          'categories', 'rooms', 'segments'
+        ])
+        && data.keys().hasOnly([
+          'updatedAt', 'logoDataUrl', 'heroBgUrl', 'legalName', 'cnpj',
+          'heroTitle', 'heroSubtitle', 'heroCta', 'aboutUsTitle', 'aboutUsText',
+          'aboutUsImage', 'differentials', 'address', 'hours', 'phone',
+          'whatsapp', 'email', 'instagram', 'mapsEmbed', 'categories',
+          'rooms', 'segments', 'deletedProductIds', 'bannersSynced'
+        ])
+        && data.legalName is string && data.legalName.size() >= 1 && data.legalName.size() <= 200
+        && data.cnpj is string && data.cnpj.size() >= 1 && data.cnpj.size() <= 50
+        && data.address is string && data.address.size() >= 1 && data.address.size() <= 500
+        && data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 50
+        && data.whatsapp is string && data.whatsapp.size() >= 1 && data.whatsapp.size() <= 50
+        && data.email is string && data.email.size() >= 1 && data.email.size() <= 150
+        && isOptionalNumber(data, 'updatedAt')
+        && isOptionalString(data, 'logoDataUrl', 250000)
+        && isOptionalString(data, 'heroBgUrl', 1000)
+        && isOptionalString(data, 'heroTitle', 300)
+        && isOptionalString(data, 'heroSubtitle', 1000)
+        && isOptionalString(data, 'heroCta', 150)
+        && isOptionalString(data, 'aboutUsTitle', 200)
+        && isOptionalString(data, 'aboutUsText', 4000)
+        && isOptionalString(data, 'aboutUsImage', 550000)
+        && isOptionalString(data, 'hours', 200)
+        && isOptionalString(data, 'instagram', 300)
+        && isOptionalString(data, 'mapsEmbed', 1000)
+        && isOptionalBool(data, 'bannersSynced')
+        && (!('differentials' in data) || (data.differentials is list && data.differentials.size() <= 10 && (data.differentials.size() == 0 || data.differentials[0] is map)))
+        && data.categories is list && data.categories.size() <= 50 && (data.categories.size() == 0 || data.categories[0] is map)
+        && data.rooms is list && data.rooms.size() <= 50 && (data.rooms.size() == 0 || data.rooms[0] is map)
+        && data.segments is list && data.segments.size() <= 20 && (data.segments.size() == 0 || data.segments[0] is map)
+        && (!('deletedProductIds' in data) || (data.deletedProductIds is list && data.deletedProductIds.size() <= 500 && (data.deletedProductIds.size() == 0 || data.deletedProductIds[0] is number)));
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'name', 'category', 'rooms', 'segments', 'spec', 'qtdMinima', 'image'])
+        && data.keys().hasOnly([
+          'id', 'sku', 'name', 'category', 'rooms', 'segments',
+          'about', 'description', 'measures', 'spec', 'qtdMinima', 'image', 'updatedAt'
+        ])
+        && data.id is int && data.id >= 1
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 240
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && data.rooms is list && data.rooms.size() <= 30 && (data.rooms.size() == 0 || data.rooms[0] is string)
+        && data.segments is list && data.segments.size() <= 20 && (data.segments.size() == 0 || data.segments[0] is string)
+        && data.spec is string && data.spec.size() <= 1000
+        && data.qtdMinima is number && data.qtdMinima >= 1
+        && data.image is string && data.image.size() <= 700000
+        && isOptionalString(data, 'sku', 80)
+        && isOptionalString(data, 'about', 2000)
+        && isOptionalString(data, 'description', 4000)
+        && isOptionalString(data, 'measures', 300)
+        && isOptionalNumber(data, 'updatedAt');
+    }
+
+    function isValidBanner(data) {
+      return data.keys().hasAll(['id', 'kind', 'order', 'enabled', 'title', 'image'])
+        && data.keys().hasOnly([
+          'id', 'kind', 'order', 'enabled', 'title', 'subtitle',
+          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.kind is string && data.kind in ['carousel', 'promotional', 'catalog']
+        && data.order is number && data.order >= 0
+        && data.enabled is bool
+        && data.title is string && data.title.size() <= 300
+        && data.image is string && data.image.size() <= 750000
+        && isOptionalString(data, 'subtitle', 600)
+        && isOptionalBool(data, 'showButton')
+        && isOptionalString(data, 'ctaLabel', 120)
+        && isOptionalString(data, 'ctaLink', 500)
+        && isOptionalString(data, 'linkUrl', 500)
+        && isOptionalNumber(data, 'updatedAt');
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'addedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'addedAt'])
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.addedAt is number;
+    }
+
+    // =====================================================================
+    // Collections
+    // =====================================================================
+    match /test/{docId} {
+      allow get: if isValidId(docId) && docId == 'connection';
+      allow list, write: if false;
+    }
+
+    match /site_settings/{settingId} {
+      allow get: if isValidId(settingId) && settingId == 'global';
+      allow list: if false;
+      allow create: if isValidId(settingId)
+        && settingId == 'global'
+        && isAdmin()
+        && isValidSiteSettings(incoming());
+      allow update: if isValidId(settingId)
+        && settingId == 'global'
+        && isAdmin()
+        && isValidSiteSettings(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'updatedAt', 'logoDataUrl', 'heroBgUrl', 'legalName', 'cnpj',
+          'heroTitle', 'heroSubtitle', 'heroCta', 'aboutUsTitle', 'aboutUsText',
+          'aboutUsImage', 'differentials', 'address', 'hours', 'phone',
+          'whatsapp', 'email', 'instagram', 'mapsEmbed', 'categories',
+          'rooms', 'segments', 'deletedProductIds', 'bannersSynced'
+        ]);
+      allow delete: if isValidId(settingId) && settingId == 'global' && isAdmin();
+    }
+
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if resource.data.id is number;
+      allow create: if isValidId(productId)
+        && isAdmin()
+        && isValidProduct(incoming())
+        && string(incoming().id) == productId;
+      allow update: if isValidId(productId)
+        && isAdmin()
+        && isValidProduct(incoming())
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'sku', 'name', 'category', 'rooms', 'segments',
+          'about', 'description', 'measures', 'spec', 'qtdMinima', 'image', 'updatedAt'
+        ]);
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow get: if isValidId(bannerId);
+      allow list: if resource.data.kind in ['carousel', 'promotional', 'catalog'];
+      allow create: if isValidId(bannerId)
+        && isAdmin()
+        && isValidBanner(incoming());
+      allow update: if isValidId(bannerId)
+        && isAdmin()
+        && isValidBanner(incoming())
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'kind', 'order', 'enabled', 'title', 'subtitle',
+          'showButton', 'ctaLabel', 'ctaLink', 'linkUrl', 'image', 'updatedAt'
+        ]);
+      allow delete: if isValidId(bannerId) && isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isAdmin() || (isSignedIn() && request.auth.uid == adminId));
+      allow list: if isAdmin() && resource.data.uid is string;
+      allow create, update: if isValidId(adminId)
+        && isAdmin()
+        && isValidAdminUser(incoming())
+        && incoming().uid == adminId;
+      allow delete: if isValidId(adminId) && isAdmin();
+    }
+  }
+}

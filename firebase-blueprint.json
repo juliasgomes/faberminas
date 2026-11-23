@@ -1,0 +1,273 @@
+{
+  "entities": {
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Configuração institucional, contatos, categorias, ambientes, segmentos e imagem Sobre Nós da Faberminas.",
+      "type": "object",
+      "properties": {
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp da última atualização em milissegundos"
+        },
+        "logoDataUrl": {
+          "type": "string",
+          "maxLength": 250000,
+          "description": "Logo oficial em URL relativa, HTTPS ou Data URL"
+        },
+        "heroBgUrl": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "legalName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "cnpj": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "heroTitle": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "heroSubtitle": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "heroCta": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "aboutUsTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "aboutUsText": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "aboutUsImage": {
+          "type": "string",
+          "maxLength": 550000
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "hours": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "whatsapp": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "instagram": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "mapsEmbed": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "differentials": {
+          "type": "array",
+          "description": "Lista de até 10 diferenciais operacionais"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Lista de até 50 categorias do catálogo"
+        },
+        "rooms": {
+          "type": "array",
+          "description": "Lista de até 50 cômodos/ambientes"
+        },
+        "segments": {
+          "type": "array",
+          "description": "Lista de até 20 segmentos atendidos"
+        },
+        "deletedProductIds": {
+          "type": "array",
+          "description": "IDs de produtos padrão removidos pelo administrador"
+        },
+        "bannersSynced": {
+          "type": "boolean",
+          "description": "Indica se a coleção /banners já contém o conjunto completo publicado"
+        }
+      },
+      "required": [
+        "legalName",
+        "cnpj",
+        "address",
+        "phone",
+        "whatsapp",
+        "email",
+        "categories",
+        "rooms",
+        "segments"
+      ]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Produto do catálogo Faberminas com foto, SKU, medidas e vínculos de ambiente/segmento.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Identificador numérico único do produto"
+        },
+        "sku": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "rooms": {
+          "type": "array",
+          "description": "Até 30 IDs de ambientes"
+        },
+        "segments": {
+          "type": "array",
+          "description": "Até 20 IDs de segmentos"
+        },
+        "about": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "measures": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "spec": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "qtdMinima": {
+          "type": "number",
+          "description": "Quantidade mínima para cotação (>= 1)"
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 700000
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "name", "category", "rooms", "segments", "spec", "qtdMinima", "image"]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Slide do carrossel principal, banner promocional ou banner do catálogo.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["carousel", "promotional", "catalog"]
+        },
+        "order": {
+          "type": "number"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "showButton": {
+          "type": "boolean"
+        },
+        "ctaLabel": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "ctaLink": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "linkUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "kind", "order", "enabled", "title", "image"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Administrador autorizado a gravar catálogo, banners e configurações.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "addedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["uid", "email", "addedAt"]
+    }
+  },
+  "firestore": {
+    "/site_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Documento único 'global' com configurações institucionais, taxonomia e lista de exclusões."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Produtos individuais do catálogo Faberminas (1 documento por produto para manter tamanho abaixo de 1MB)."
+    },
+    "/banners/{bannerId}": {
+      "schema": { "$ref": "#/entities/Banner" },
+      "description": "Slides de carrossel, banners promocionais e banner da página de catálogo."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Lista de UIDs de administradores adicionais autorizados além do admin principal."
+    }
+  }
+}

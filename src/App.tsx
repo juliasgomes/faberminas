@@ -33,12 +33,26 @@ import {
   renderLucideIcon,
   resolveLogoSrc
 } from './utils/helpers';
+import { User } from 'firebase/auth';
 import { HeroBannerCarousel } from './components/HeroBannerCarousel';
 import { InteractiveHouseSection } from './components/InteractiveHouseSection';
 import { CatalogView } from './components/CatalogView';
 import { QuoteDrawer } from './components/QuoteDrawer';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ProductDetailModal } from './components/ProductDetailModal';
+import {
+  signInAdminWithGoogle,
+  signOutAdmin,
+  subscribeToAuth,
+  verifyUserIsAdmin
+} from './firebase';
+import {
+  CloudSnapshotState,
+  pushAllCustomizationsToCloud,
+  restoreCloudDefaults,
+  subscribeToCloudSiteData,
+  syncSiteDataDiffToCloud
+} from './services/cloudSiteSync';
 
 declare global {
   interface Window {
@@ -110,7 +124,21 @@ function parseCatalogFiltersFromHash(hash: string): {
 
 export default function App() {
   const [siteData, setSiteData] = useState<SiteData>(hydrateSiteData);
+  const siteDataRef = useRef<SiteData>(siteData);
+  const lastCloudSyncedDataRef = useRef<SiteData>(INITIAL_SITE_DATA);
   const [currentRoute, setCurrentRoute] = useState<string>(() => window.location.hash || '#/inicio');
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isCloudAdmin, setIsCloudAdmin] = useState<boolean>(false);
+  const [authReady, setAuthReady] = useState<boolean>(false);
+  const [cloudMeta, setCloudMeta] = useState<CloudSnapshotState>({
+    hasSettingsDoc: false,
+    cloudUpdatedAt: 0,
+    productDocsCount: 0,
+    bannerDocsCount: 0
+  });
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
+  const autoPushedEmptyCloudRef = useRef<boolean>(false);
 
   // Filtros e Busca Global (#/produtos e Header)
   const initialFilters = parseCatalogFiltersFromHash(window.location.hash || '');
@@ -166,6 +194,67 @@ export default function App() {
     }
     ogUrlMeta.setAttribute('content', canonicalHref);
   }, []);
+
+  // Autenticação Firebase para gravação administrativa em nuvem
+  useEffect(() => {
+    const unsub = subscribeToAuth(async (user) => {
+      setAuthUser(user);
+      const adminOk = await verifyUserIsAdmin(user);
+      setIsCloudAdmin(adminOk);
+      setAuthReady(true);
+    });
+    return () => unsub();
+  }, []);
+
+  // Sincronização em tempo real com Firestore (fotos, banners, produtos e textos em todos os dispositivos)
+  useEffect(() => {
+    const unsub = subscribeToCloudSiteData((merged, meta) => {
+      setCloudMeta(meta);
+      const cloudHasContent =
+        meta.hasSettingsDoc || meta.productDocsCount > 0 || meta.bannerDocsCount > 0;
+      if (cloudHasContent) {
+        lastCloudSyncedDataRef.current = merged;
+        siteDataRef.current = merged;
+        setSiteData(merged);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        } catch {
+          // Ignora limite de quota local se houver muitas imagens: Firestore mantém o estado global
+        }
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Se o administrador conectar com Google e a nuvem ainda estiver vazia mas houver fotos/alterações locais, publica automaticamente
+  useEffect(() => {
+    if (!isCloudAdmin || autoPushedEmptyCloudRef.current) return;
+    const cloudIsEmpty =
+      !cloudMeta.hasSettingsDoc &&
+      cloudMeta.productDocsCount === 0 &&
+      cloudMeta.bannerDocsCount === 0;
+    if (!cloudIsEmpty) return;
+
+    const current = siteDataRef.current;
+    const hasLocalCustomizations =
+      Boolean(current.aboutUsImage) ||
+      current.products.some((p) => Boolean(p.image)) ||
+      current.banners.carousel.some((s) => Boolean(s.image)) ||
+      current.banners.promotional.length > 0 ||
+      Boolean(current.banners.catalog.image) ||
+      Number(current.updatedAt || 0) > 0;
+
+    if (!hasLocalCustomizations) return;
+    autoPushedEmptyCloudRef.current = true;
+    setCloudSyncStatus('saving');
+    setCloudSyncError(null);
+    pushAllCustomizationsToCloud(current)
+      .then(() => setCloudSyncStatus('saved'))
+      .catch((err) => {
+        setCloudSyncStatus('error');
+        setCloudSyncError(err instanceof Error ? err.message : 'Erro ao enviar dados para a nuvem.');
+      });
+  }, [isCloudAdmin, cloudMeta]);
 
   // Fechar autocomplete da busca global e dropdown Produtos ao clicar fora ou pressionar Escape
   useEffect(() => {
@@ -266,12 +355,44 @@ export default function App() {
       .slice(0, 7);
   }, [searchQuery, siteData.products, siteData.categories, siteData.rooms]);
 
-  const persistSiteData = (nextData: SiteData) => {
+  const persistSiteData = (nextData: SiteData, commitToCloud = true) => {
+    siteDataRef.current = nextData;
     setSiteData(nextData);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
     } catch (e) {
       console.error('Erro ao salvar no navegador:', e);
+    }
+
+    if (commitToCloud && isCloudAdmin) {
+      const cloudBaseline = lastCloudSyncedDataRef.current;
+      setCloudSyncStatus('saving');
+      setCloudSyncError(null);
+      void syncSiteDataDiffToCloud(cloudBaseline, nextData)
+        .then(() => {
+          lastCloudSyncedDataRef.current = nextData;
+          setCloudSyncStatus('saved');
+        })
+        .catch((err) => {
+          setCloudSyncStatus('error');
+          setCloudSyncError(err instanceof Error ? err.message : 'Falha ao salvar na nuvem.');
+        });
+    }
+  };
+
+  const handleSyncAllToCloud = async () => {
+    if (!isCloudAdmin) return;
+    setCloudSyncStatus('saving');
+    setCloudSyncError(null);
+    try {
+      const snapshot = siteDataRef.current;
+      await pushAllCustomizationsToCloud(snapshot);
+      lastCloudSyncedDataRef.current = snapshot;
+      setCloudSyncStatus('saved');
+    } catch (err) {
+      setCloudSyncStatus('error');
+      setCloudSyncError(err instanceof Error ? err.message : 'Falha ao sincronizar com a nuvem.');
+      throw err;
     }
   };
 
@@ -472,16 +593,58 @@ export default function App() {
       <AdminDashboard
         siteData={siteData}
         onUpdateSiteData={persistSiteData}
-          onRestoreDefaults={() => {
-            setSiteData(DEFAULT_SITE_DATA);
-          }}
-          onExitAdmin={() => {
-            window.location.hash = '#/inicio';
-            setCurrentRoute('#/inicio');
-          }}
-        />
-      );
-    }
+        onRestoreDefaults={async () => {
+          siteDataRef.current = DEFAULT_SITE_DATA;
+          setSiteData(DEFAULT_SITE_DATA);
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // ignore
+          }
+          if (isCloudAdmin) {
+            setCloudSyncStatus('saving');
+            try {
+              await restoreCloudDefaults();
+              lastCloudSyncedDataRef.current = DEFAULT_SITE_DATA;
+              setCloudSyncStatus('saved');
+            } catch (err) {
+              setCloudSyncStatus('error');
+              setCloudSyncError(
+                err instanceof Error ? err.message : 'Erro ao restaurar padrões na nuvem.'
+              );
+            }
+          }
+        }}
+        onExitAdmin={() => {
+          window.location.hash = '#/inicio';
+          setCurrentRoute('#/inicio');
+        }}
+        authUser={authUser}
+        isCloudAdmin={isCloudAdmin}
+        authReady={authReady}
+        cloudMeta={cloudMeta}
+        cloudSyncStatus={cloudSyncStatus}
+        cloudSyncError={cloudSyncError}
+        onGoogleSignIn={async () => {
+          const user = await signInAdminWithGoogle();
+          const adminOk = await verifyUserIsAdmin(user);
+          setAuthUser(user);
+          setIsCloudAdmin(adminOk);
+          if (!adminOk) {
+            throw new Error(
+              `A conta ${user.email || 'selecionada'} não está autorizada como administradora.`
+            );
+          }
+        }}
+        onGoogleSignOut={async () => {
+          await signOutAdmin();
+          setAuthUser(null);
+          setIsCloudAdmin(false);
+        }}
+        onSyncAllToCloud={handleSyncAllToCloud}
+      />
+    );
+  }
 
     const isCatalogView = currentRoute.startsWith('#/produtos');
     const promotionalBanners = (siteData.banners.promotional || []).filter(
