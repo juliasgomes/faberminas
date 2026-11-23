@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowRight,
-  MousePointerClick,
   X,
   ClipboardList,
   Check,
@@ -120,10 +119,6 @@ export const InteractiveHouseSection: React.FC<InteractiveHouseSectionProps> = (
   const getRoomCount = (roomId: string) => getRoomProducts(roomId).length;
   const findRoom = (id: string) => rooms.find((r) => r.id === id);
 
-  const activeHoverRoom = hoveredRoomId ? findRoom(hoveredRoomId) : null;
-  const activePinPos = hoveredRoomId ? CORE_PIN_POSITIONS[hoveredRoomId] : null;
-  const activeTooltipCoords = activePinPos ? iso(activePinPos.u, activePinPos.v, 58) : null;
-
   const selectedRoom = selectedRoomId ? findRoom(selectedRoomId) || null : null;
   const selectedRoomProducts = selectedRoomId ? getRoomProducts(selectedRoomId) : [];
   const whatsDigits = onlyDigits(whatsapp);
@@ -153,15 +148,6 @@ export const InteractiveHouseSection: React.FC<InteractiveHouseSectionProps> = (
 
         {/* Container principal da Casinha Isométrica (escala ampliada para fácil visualização e toque) */}
         <div className="relative max-w-6xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-lg shadow-[#004d61]/5 p-2.5 sm:p-5 lg:p-6">
-          <div className="hidden md:flex items-center justify-between text-xs text-slate-500 pb-3 mb-2 border-b border-slate-100">
-            <span className="inline-flex items-center gap-1.5 font-medium text-[#004d61]">
-              <MousePointerClick className="w-4 h-4" />
-              Passe o mouse ou clique em qualquer ambiente da planta para abrir a lista de produtos
-            </span>
-            <span className="tabular-nums text-slate-500">
-              {rooms.length} ambientes mapeados
-            </span>
-          </div>
 
           {/* Planta SVG Arquitetônica Isométrica Detalhada */}
           <div className="relative w-full">
@@ -668,54 +654,12 @@ export const InteractiveHouseSection: React.FC<InteractiveHouseSectionProps> = (
                         fontWeight="700"
                         fontFamily="Inter, sans-serif"
                       >
-                        {room.shortLabel} ({count})
+                        {count > 0 ? `${room.shortLabel} (${count})` : room.shortLabel}
                       </text>
                     </g>
                   </g>
                 );
               })}
-
-              {/* Tooltip Flutuante Desktop no Hover */}
-              {activeHoverRoom && activeTooltipCoords && (
-                <g
-                  className="hidden md:block pointer-events-none animate-fade-in"
-                  transform={`translate(${Math.min(Math.max(activeTooltipCoords[0], 145), 775)}, ${Math.max(activeTooltipCoords[1] - 46, 54)})`}
-                >
-                  <rect
-                    x="-138"
-                    y="-48"
-                    width="276"
-                    height="56"
-                    rx="10"
-                    fill="#004d61"
-                    stroke="#ffffff"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="0"
-                    y="-25"
-                    textAnchor="middle"
-                    fill="#ffffff"
-                    fontSize="13"
-                    fontWeight="800"
-                    fontFamily="Inter, sans-serif"
-                  >
-                    {activeHoverRoom.label}
-                  </text>
-                  <text
-                    x="0"
-                    y="-6"
-                    textAnchor="middle"
-                    fill="#eef5f7"
-                    fontSize="11"
-                    fontWeight="500"
-                    fontFamily="Inter, sans-serif"
-                  >
-                    {getRoomCount(activeHoverRoom.id)}{' '}
-                    {getRoomCount(activeHoverRoom.id) === 1 ? 'item cadastrado' : 'itens cadastrados'} · Clique para abrir
-                  </text>
-                </g>
-              )}
             </svg>
           </div>
         </div>

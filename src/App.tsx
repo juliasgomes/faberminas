@@ -22,12 +22,17 @@ import {
 import { Product, QuoteItem, SiteData } from './types';
 import {
   DEFAULT_SITE_DATA,
-  EMBEDDED_FAVICON,
-  EXACT_LOGO_PATH,
+  INITIAL_SITE_DATA,
   LEGACY_STORAGE_KEYS,
-  STORAGE_KEY
+  STORAGE_KEY,
+  mergeSiteDataWithDefaults
 } from './data/defaultSiteData';
-import { onlyDigits, renderLucideIcon, resolveLogoSrc } from './utils/helpers';
+import {
+  FALLBACK_LOGO_PATH,
+  onlyDigits,
+  renderLucideIcon,
+  resolveLogoSrc
+} from './utils/helpers';
 import { HeroBannerCarousel } from './components/HeroBannerCarousel';
 import { InteractiveHouseSection } from './components/InteractiveHouseSection';
 import { CatalogView } from './components/CatalogView';
@@ -43,136 +48,48 @@ declare global {
 
 function hydrateSiteData(): SiteData {
   const embedded = typeof window !== 'undefined' ? window.__FABERMINAS_SITE_DATA__ : undefined;
-
-  const normalizeProducts = (rawList: Product[]): Product[] =>
-    rawList.map((p) => {
-      const fallbackProd = DEFAULT_SITE_DATA.products.find(
-        (dp) => dp.id === p.id || (p.sku && dp.sku === p.sku)
-      );
-      return {
-        ...p,
-        sku: p.sku || fallbackProd?.sku,
-        about: p.about ?? fallbackProd?.about ?? '',
-        description: p.description ?? fallbackProd?.description ?? '',
-        measures: p.measures ?? fallbackProd?.measures ?? '',
-        qtdMinima: Math.max(1, Number(p.qtdMinima ?? fallbackProd?.qtdMinima) || 1),
-        rooms: Array.isArray(p.rooms) ? p.rooms : fallbackProd?.rooms || [],
-        segments: Array.isArray(p.segments) ? p.segments : fallbackProd?.segments || []
-      };
-    });
-
-  const normalizePromotional = (rawBanners: Partial<SiteData['banners']>) => {
-    if (Array.isArray(rawBanners.promotional)) {
-      return rawBanners.promotional;
-    }
-    const legacyList = [rawBanners.secondary1, rawBanners.secondary2, rawBanners.home]
-      .filter((b): b is NonNullable<typeof b> => Boolean(b && b.image))
-      .map((b, idx) => ({
-        id: b.id || `promo-${idx + 1}`,
-        enabled: b.enabled !== false,
-        image: b.image,
-        title: b.title || '',
-        linkUrl: b.linkUrl || '',
-        showButton: Boolean(b.showButton),
-        ctaLabel: b.ctaLabel || 'Ver ofertas'
-      }));
-    return legacyList;
-  };
-
-  const mergeWithDefaults = (raw: Partial<SiteData>, preserveCatalog = true): SiteData => {
-    const rawProducts =
-      preserveCatalog && Array.isArray(raw.products) && raw.products.length > 0
-        ? normalizeProducts(raw.products)
-        : DEFAULT_SITE_DATA.products;
-
-    const rawBanners = raw.banners || ({} as Partial<SiteData['banners']>);
-
-    return {
-      ...DEFAULT_SITE_DATA,
-      ...raw,
-      legalName:
-        raw.legalName && !raw.legalName.includes('Distribuidora')
-          ? raw.legalName
-          : 'Faberminas',
-      logoDataUrl:
-        raw.logoDataUrl && raw.logoDataUrl !== 'logo.png'
-          ? raw.logoDataUrl
-          : EXACT_LOGO_PATH,
-      aboutUsTitle: raw.aboutUsTitle ?? DEFAULT_SITE_DATA.aboutUsTitle,
-      aboutUsText: raw.aboutUsText ?? DEFAULT_SITE_DATA.aboutUsText,
-      aboutUsImage: raw.aboutUsImage ?? DEFAULT_SITE_DATA.aboutUsImage,
-      differentials:
-        Array.isArray(raw.differentials) && raw.differentials.length > 0
-          ? raw.differentials
-          : DEFAULT_SITE_DATA.differentials,
-      categories:
-        preserveCatalog && Array.isArray(raw.categories) && raw.categories.length > 0
-          ? raw.categories
-          : DEFAULT_SITE_DATA.categories,
-      rooms:
-        Array.isArray(raw.rooms) && raw.rooms.length > 0
-          ? raw.rooms
-          : DEFAULT_SITE_DATA.rooms,
-      segments:
-        Array.isArray(raw.segments) && raw.segments.length > 0
-          ? raw.segments
-          : DEFAULT_SITE_DATA.segments,
-      products: rawProducts,
-      banners: {
-        carousel:
-          Array.isArray(rawBanners.carousel) && rawBanners.carousel.length > 0
-            ? rawBanners.carousel.map((s) => ({ ...s, showButton: s.showButton !== false }))
-            : DEFAULT_SITE_DATA.banners.carousel,
-        promotional: normalizePromotional(rawBanners),
-        catalog: {
-          ...DEFAULT_SITE_DATA.banners.catalog,
-          ...(rawBanners.catalog || {})
-        }
-      }
-    };
-  };
+  const canonicalBase = embedded
+    ? mergeSiteDataWithDefaults(INITIAL_SITE_DATA, embedded, true)
+    : INITIAL_SITE_DATA;
+  const canonicalUpdatedAt = Number(canonicalBase.updatedAt || 0);
 
   try {
     const savedV6 = localStorage.getItem(STORAGE_KEY);
     if (savedV6) {
       const parsed = JSON.parse(savedV6) as Partial<SiteData>;
-      if (
-        embedded &&
-        embedded.updatedAt &&
-        (!parsed.updatedAt || embedded.updatedAt > parsed.updatedAt)
-      ) {
-        return mergeWithDefaults(embedded, true);
+      const parsedUpdatedAt = Number(parsed?.updatedAt || 0);
+      // Se o código/siteConfig.json ou INITIAL_SITE_DATA embutido for mais novo ou igual, prevalece o estado global
+      if (canonicalUpdatedAt > 0 && canonicalUpdatedAt >= parsedUpdatedAt) {
+        return canonicalBase;
       }
-      return mergeWithDefaults(parsed, true);
+      return mergeSiteDataWithDefaults(canonicalBase, parsed, true);
     }
 
-    // Ao migrar de chaves legadas (v5/v4/v3/v2), preservamos banners/contatos/sobre-nos customizados,
-    // mas aplicamos títulos limpos e regras estritas de tagueamento v6.
-    for (const oldKey of LEGACY_STORAGE_KEYS) {
-      const savedLegacy = localStorage.getItem(oldKey);
-      if (savedLegacy) {
-        const parsedLegacy = JSON.parse(savedLegacy) as Partial<SiteData>;
-        return mergeWithDefaults(
-          {
-            ...parsedLegacy,
-            heroBgUrl:
-              parsedLegacy.heroBgUrl && parsedLegacy.heroBgUrl.includes('images.unsplash.com')
-                ? ''
-                : parsedLegacy.heroBgUrl
-          },
-          false
-        );
+    // Migração legada (v5/v4/v3/v2): preserva apenas se não houver snapshot mais novo em INITIAL_SITE_DATA
+    if (canonicalUpdatedAt === 0) {
+      for (const oldKey of LEGACY_STORAGE_KEYS) {
+        const savedLegacy = localStorage.getItem(oldKey);
+        if (savedLegacy) {
+          const parsedLegacy = JSON.parse(savedLegacy) as Partial<SiteData>;
+          return mergeSiteDataWithDefaults(
+            canonicalBase,
+            {
+              ...parsedLegacy,
+              heroBgUrl:
+                parsedLegacy.heroBgUrl && parsedLegacy.heroBgUrl.includes('images.unsplash.com')
+                  ? ''
+                  : parsedLegacy.heroBgUrl
+            },
+            false
+          );
+        }
       }
     }
   } catch (e) {
     console.error('Erro ao ler dados salvos:', e);
   }
 
-  if (embedded) {
-    return mergeWithDefaults(embedded, true);
-  }
-
-  return DEFAULT_SITE_DATA;
+  return canonicalBase;
 }
 
 function parseCatalogFiltersFromHash(hash: string): {
@@ -216,14 +133,38 @@ export default function App() {
   const [headerSelectedProduct, setHeaderSelectedProduct] = useState<Product | null>(null);
   const [contactFormSubmitted, setContactFormSubmitted] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
+  const [logoLoadStage, setLogoLoadStage] = useState<'primary' | 'fallback' | 'text'>('primary');
+  const [brokenPromoImages, setBrokenPromoImages] = useState<Record<string, boolean>>({});
+  const [brokenAboutImage, setBrokenAboutImage] = useState(false);
 
-  // Sincronizar Favicon oficial embutido e título exato "Faberminas"
+  useEffect(() => {
+    setLogoLoadStage('primary');
+  }, [siteData.logoDataUrl]);
+
+  useEffect(() => {
+    setBrokenAboutImage(false);
+  }, [siteData.aboutUsImage]);
+
+  // Manter título SEO completo e URL canônica/OpenGraph sem sobrescrever os favicons multi-formato
   useEffect(() => {
     document.title = 'Faberminas';
-    const existingIcons = Array.from(document.querySelectorAll('link[rel*="icon"]'));
-    existingIcons.forEach((link) => {
-      link.setAttribute('href', EMBEDDED_FAVICON);
-    });
+
+    const canonicalHref = window.location.origin + window.location.pathname;
+    let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', canonicalHref);
+
+    let ogUrlMeta = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
+    if (!ogUrlMeta) {
+      ogUrlMeta = document.createElement('meta');
+      ogUrlMeta.setAttribute('property', 'og:url');
+      document.head.appendChild(ogUrlMeta);
+    }
+    ogUrlMeta.setAttribute('content', canonicalHref);
   }, []);
 
   // Fechar autocomplete da busca global e dropdown Produtos ao clicar fora ou pressionar Escape
@@ -531,45 +472,56 @@ export default function App() {
       <AdminDashboard
         siteData={siteData}
         onUpdateSiteData={persistSiteData}
-        onRestoreDefaults={() => {
-          setSiteData(DEFAULT_SITE_DATA);
-        }}
-        onExitAdmin={() => {
-          window.location.hash = '#/inicio';
-          setCurrentRoute('#/inicio');
-        }}
-      />
+          onRestoreDefaults={() => {
+            setSiteData(DEFAULT_SITE_DATA);
+          }}
+          onExitAdmin={() => {
+            window.location.hash = '#/inicio';
+            setCurrentRoute('#/inicio');
+          }}
+        />
+      );
+    }
+
+    const isCatalogView = currentRoute.startsWith('#/produtos');
+    const promotionalBanners = (siteData.banners.promotional || []).filter(
+      (slot) => slot && slot.enabled && slot.image && !brokenPromoImages[slot.id || slot.image]
     );
-  }
+    const hasSecondaryBanners = promotionalBanners.length > 0;
+    const effectiveLogoSrc =
+      logoLoadStage === 'fallback' ? FALLBACK_LOGO_PATH : logoImageSrc;
 
-  const isCatalogView = currentRoute.startsWith('#/produtos');
-  const promotionalBanners = (siteData.banners.promotional || []).filter(
-    (slot) => slot && slot.enabled && slot.image
-  );
-  const hasSecondaryBanners = promotionalBanners.length > 0;
-
-  return (
-    <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-[#004d61] selection:text-white">
-      {/* ================================================================= */}
-      {/* 1. CABEÇALHO E-COMMERCE EM 2 NÍVEIS (#004d61)                    */}
-      {/* ================================================================= */}
-      <header className="sticky top-0 z-40 bg-[#004d61] text-white shadow-md">
-        {/* Nível Superior: Full-width sem espaço vazio — Logo + Busca Global + Cesta de Cotação */}
-        <div className="w-full px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center justify-between gap-3 sm:gap-6 h-16 sm:h-20">
-            {/* Esquerda: logo.png */}
-            <button
-              type="button"
-              onClick={() => navigateToHomeSection()}
-              className="logo-anim focus:outline-none py-1 shrink-0"
-              aria-label="Faberminas Início"
-            >
-              <img
-                src={logoImageSrc}
-                alt="Faberminas"
-                className="h-9 sm:h-12 w-auto object-contain"
-              />
-            </button>
+    return (
+      <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-[#004d61] selection:text-white">
+        {/* ================================================================= */}
+        {/* 1. CABEÇALHO E-COMMERCE EM 2 NÍVEIS (#004d61)                    */}
+        {/* ================================================================= */}
+        <header className="sticky top-0 z-40 bg-[#004d61] text-white shadow-md">
+          {/* Nível Superior: Full-width sem espaço vazio — Logo + Busca Global + Cesta de Cotação */}
+          <div className="w-full px-4 sm:px-6 lg:px-10">
+            <div className="flex items-center justify-between gap-3 sm:gap-6 h-16 sm:h-20">
+              {/* Esquerda: logo.png com fallback automático */}
+              <button
+                type="button"
+                onClick={() => navigateToHomeSection()}
+                className="logo-anim focus:outline-none py-1 shrink-0"
+                aria-label="Faberminas Início"
+              >
+                {logoLoadStage === 'text' ? (
+                  <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                    Faberminas
+                  </span>
+                ) : (
+                  <img
+                    src={effectiveLogoSrc}
+                    alt="Faberminas"
+                    onError={() =>
+                      setLogoLoadStage((prev) => (prev === 'primary' ? 'fallback' : 'text'))
+                    }
+                    className="h-9 sm:h-12 w-auto object-contain"
+                  />
+                )}
+              </button>
 
             {/* Centro: Barra de Busca Global ocupando toda a largura disponível */}
             <div ref={headerSearchRef} className="hidden md:block relative flex-1 z-30">
@@ -1117,6 +1069,12 @@ export default function App() {
                                 src={slot.image}
                                 alt={slot.title || `Campanha Faberminas ${idx + 1}`}
                                 referrerPolicy="no-referrer"
+                                onError={() =>
+                                  setBrokenPromoImages((prev) => ({
+                                    ...prev,
+                                    [slot.id || slot.image]: true
+                                  }))
+                                }
                                 className="w-full max-h-72 object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                               />
                             </a>
@@ -1126,6 +1084,12 @@ export default function App() {
                                 src={slot.image}
                                 alt={slot.title || `Campanha Faberminas ${idx + 1}`}
                                 referrerPolicy="no-referrer"
+                                onError={() =>
+                                  setBrokenPromoImages((prev) => ({
+                                    ...prev,
+                                    [slot.id || slot.image]: true
+                                  }))
+                                }
                                 className="w-full max-h-72 object-cover"
                               />
                               {showBtn && (
@@ -1174,11 +1138,12 @@ export default function App() {
                   </div>
 
                   <div className="lg:col-span-5">
-                    {siteData.aboutUsImage ? (
+                    {siteData.aboutUsImage && !brokenAboutImage ? (
                       <div className="rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl bg-[#003a49] aspect-[4/3]">
                         <img
                           src={siteData.aboutUsImage}
                           alt={siteData.aboutUsTitle || 'Sobre a Faberminas'}
+                          onError={() => setBrokenAboutImage(true)}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -1496,14 +1461,26 @@ export default function App() {
                 className="logo-anim inline-block focus:outline-none"
                 aria-label="Faberminas"
               >
-                <img
-                  src={logoImageSrc}
-                  alt="Faberminas"
-                  className="h-11 sm:h-14 w-auto object-contain mx-auto md:mx-0"
-                />
+                {logoLoadStage === 'text' ? (
+                  <span className="text-2xl font-extrabold tracking-tight text-white">
+                    Faberminas
+                  </span>
+                ) : (
+                  <img
+                    src={effectiveLogoSrc}
+                    alt="Faberminas"
+                    onError={() =>
+                      setLogoLoadStage((prev) => (prev === 'primary' ? 'fallback' : 'text'))
+                    }
+                    className="h-11 sm:h-14 w-auto object-contain mx-auto md:mx-0"
+                  />
+                )}
               </button>
               <p className="text-sm text-white/80 max-w-xs mx-auto md:mx-0 leading-relaxed whitespace-pre-line">
                 {siteData.address}
+              </p>
+              <p className="sr-only">
+                FaberMinas Distribuidora — Material de limpeza, produtos de limpeza profissional e concentrados, descartáveis em BH, papel toalha interfolhado, papel higiênico institucional, saco de lixo reforçado, sabonete líquido, álcool 70, desinfetante profissional, água sanitária, detergente neutro, luva nitrílica, luva de látex, luva de vinil, EPI Belo Horizonte, material hospitalar BH, fralda geriátrica e infantil, rodos, vassouras, pano de chão algodão, flanela limpeza, lixeira com pedal e suprimentos corporativos para condomínios, escritórios, clínicas, hospitais, restaurantes, atacado e varejo CPF e CNPJ no Alípio de Melo, Belo Horizonte e Região Metropolitana.
               </p>
             </div>
 

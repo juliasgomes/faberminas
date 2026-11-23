@@ -19,19 +19,26 @@ import {
   ArrowUp,
   ArrowDown,
   Plus,
-  GripVertical
+  GripVertical,
+  AlertTriangle,
+  Globe
 } from 'lucide-react';
 import { BannerSlot, Category, HeroSlide, Product, RoomZone, SiteData } from '../types';
 import {
+  ADMIN_SYNC_META_KEY,
   DEFAULT_SITE_DATA,
   EXACT_LOGO_PATH,
+  INITIAL_SITE_DATA,
   LEGACY_STORAGE_KEYS,
-  STORAGE_KEY
+  STORAGE_KEY,
+  mergeSiteDataWithDefaults
 } from '../data/defaultSiteData';
 import {
+  FALLBACK_LOGO_PATH,
   compressImageToDataURL,
   renderLucideIcon,
   resolveLogoSrc,
+  sanitizePersistentMediaUrl,
   slugifyId
 } from '../utils/helpers';
 import { downloadUpdatedSiteHtml } from '../utils/exportStandaloneHtml';
@@ -58,6 +65,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [toast, setToast] = useState<string | null>(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [exportingHtml, setExportingHtml] = useState(false);
+  const [exportMeta, setExportMeta] = useState<{
+    lastExportedAt: number;
+    lastExportedType: 'html' | 'json' | null;
+  }>(() => {
+    try {
+      const raw = localStorage.getItem(ADMIN_SYNC_META_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          lastExportedAt: Number(parsed?.lastExportedAt || 0),
+          lastExportedType: parsed?.lastExportedType === 'html' || parsed?.lastExportedType === 'json' ? parsed.lastExportedType : null
+        };
+      }
+    } catch {
+      // ignore storage errors
+    }
+    return { lastExportedAt: 0, lastExportedType: null };
+  });
 
   // Tab 1: Produtos & SKUs
   const [prodSearch, setProdSearch] = useState('');
@@ -98,10 +123,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setToast((prev) => (prev === msg ? null : prev)), 3200);
   };
 
+  const recordExportMeta = (type: 'html' | 'json', timestamp: number) => {
+    const nextMeta = { lastExportedAt: timestamp, lastExportedType: type };
+    setExportMeta(nextMeta);
+    try {
+      localStorage.setItem(ADMIN_SYNC_META_KEY, JSON.stringify(nextMeta));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
   const commitData = (next: SiteData, msg: string) => {
     onUpdateSiteData({ ...next, updatedAt: Date.now() });
     showAdminToast(msg);
   };
+
+  const updateDraft = (next: SiteData) => {
+    onUpdateSiteData({ ...next, updatedAt: Date.now() });
+  };
+
+  const canonicalUpdatedAt = Number(INITIAL_SITE_DATA.updatedAt || 0);
+  const localUpdatedAt = Number(siteData.updatedAt || 0);
+  const latestPublishedAt = Math.max(canonicalUpdatedAt, Number(exportMeta.lastExportedAt || 0));
+  const hasUnexportedLocalChanges = localUpdatedAt > latestPublishedAt;
 
   const resetProdForm = () => {
     setEditingProductId(null);
@@ -145,11 +189,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleDownloadHtml = async () => {
     setExportingHtml(true);
     try {
-      await downloadUpdatedSiteHtml(siteData);
-      showAdminToast('Arquivo index.html atualizado gerado e baixado!');
+      const exportedAt = Math.max(Date.now(), Number(siteData.updatedAt || 0));
+      const syncedSnapshot: SiteData = { ...siteData, updatedAt: exportedAt };
+      onUpdateSiteData(syncedSnapshot);
+      await downloadUpdatedSiteHtml(syncedSnapshot);
+      recordExportMeta('html', exportedAt);
+      showAdminToast('Site atualizado (.html) salvo e baixado!');
     } finally {
       setExportingHtml(false);
     }
+  };
+
+  const handleExportSiteConfigJson = () => {
+    const exportedAt = Math.max(Date.now(), Number(siteData.updatedAt || 0));
+    const syncedSnapshot: SiteData = { ...siteData, updatedAt: exportedAt };
+    onUpdateSiteData(syncedSnapshot);
+    const blob = new Blob([JSON.stringify(syncedSnapshot, null, 2)], {
+      type: 'application/json;charset=utf-8'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'site-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    recordExportMeta('json', exportedAt);
+    showAdminToast('Configuração site-config.json exportada!');
   };
 
   const moveCarouselSlide = (index: number, direction: -1 | 1) => {
@@ -275,7 +340,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <header className="bg-[#004d61] text-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={logoSrc} alt="Faberminas" className="h-9 w-auto object-contain shrink-0" />
+            <img
+              src={logoSrc}
+              alt="Faberminas"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallbackApplied) {
+                  img.dataset.fallbackApplied = '1';
+                  img.src = FALLBACK_LOGO_PATH;
+                }
+              }}
+              className="h-9 w-auto object-contain shrink-0"
+            />
             <span className="text-xs font-semibold uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-md truncate">
               Painel Administrativo
             </span>
@@ -346,6 +422,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Indicador de Sincronização (Preview Local vs Produção Global) */}
+          <div
+            className={`rounded-2xl border p-4 sm:px-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+              hasUnexportedLocalChanges
+                ? 'bg-amber-50 border-amber-300 text-amber-950'
+                : 'bg-[#eef5f7] border-[#004d61]/25 text-[#004d61]'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              {hasUnexportedLocalChanges ? (
+                <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              ) : (
+                <Globe className="w-5 h-5 text-[#004d61] shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-sm font-bold">
+                  {hasUnexportedLocalChanges
+                    ? 'Alterações no Preview Local (ainda não publicadas para outros dispositivos)'
+                    : 'Sincronizado com o arquivo exportado / produção'}
+                </p>
+                <p className="text-xs opacity-90 mt-0.5">
+                  {hasUnexportedLocalChanges
+                    ? 'As alterações feitas aqui ficam visíveis apenas neste navegador até você baixar o index.html atualizado ou exportar o site-config.json.'
+                    : exportMeta.lastExportedAt > 0
+                      ? `Última exportação (${exportMeta.lastExportedType === 'json' ? 'site-config.json' : 'index.html'}) em ${new Date(exportMeta.lastExportedAt).toLocaleString('pt-BR')}.`
+                      : 'Estado atual em sincronia com a configuração global padrão do site.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                disabled={exportingHtml}
+                onClick={handleDownloadHtml}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#004d61] hover:bg-[#003a49] text-white text-xs font-bold cursor-pointer disabled:opacity-60"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>
+                  {exportingHtml ? 'Gerando...' : 'Salvar e Baixar Site Atualizado (.html)'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('deploy')}
+                className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-[#004d61] text-slate-800 text-xs font-semibold cursor-pointer"
+              >
+                Configuração / Deploy
+              </button>
+            </div>
+          </div>
+
           {/* Abas */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 border-b border-slate-200">
             {tabButton('produtos', 'Produtos & SKUs', <Package className="w-4 h-4" />)}
@@ -614,7 +742,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <input
                         type="text"
                         value={prodFormImageUrl.startsWith('data:') ? '' : prodFormImageUrl}
-                        onChange={(e) => setProdFormImageUrl(e.target.value)}
+                        onChange={(e) =>
+                          setProdFormImageUrl(sanitizePersistentMediaUrl(e.target.value))
+                        }
                         placeholder={
                           prodFormImageUrl.startsWith('data:')
                             ? 'Imagem enviada em Base64'
@@ -639,6 +769,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <img
                         src={prodFormImageUrl}
                         alt="Prévia do produto"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                         className="w-14 h-14 rounded-lg object-cover border border-slate-200"
                       />
                       <span className="text-xs text-slate-600">
@@ -701,7 +834,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-11 h-11 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
                             {p.image ? (
-                              <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                              <img
+                                src={p.image}
+                                alt={p.name}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <Package className="w-5 h-5 text-[#004d61]" />
                             )}
@@ -896,6 +1036,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <img
                               src={slide.image}
                               alt={slide.title || `Slide ${idx + 1}`}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
                               className="w-full max-h-48 object-cover"
                             />
                           </div>
@@ -913,7 +1056,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onChange={async (e) => {
                                   const f = e.target.files?.[0];
                                   if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.85);
+                                    const dataUrl = await compressImageToDataURL(f, 1600, 0.82);
                                     const next = siteData.banners.carousel.map((s) =>
                                       s.id === slide.id ? { ...s, image: dataUrl, enabled: true } : s
                                     );
@@ -958,7 +1101,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   const next = siteData.banners.carousel.map((s) =>
                                     s.id === slide.id ? { ...s, ctaLink: e.target.value } : s
                                   );
-                                  onUpdateSiteData({
+                                  updateDraft({
                                     ...siteData,
                                     banners: { ...siteData.banners, carousel: next }
                                   });
@@ -973,7 +1116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   const next = siteData.banners.carousel.map((s) =>
                                     s.id === slide.id ? { ...s, ctaLink: e.target.value } : s
                                   );
-                                  onUpdateSiteData({
+                                  updateDraft({
                                     ...siteData,
                                     banners: { ...siteData.banners, carousel: next }
                                   });
@@ -1000,7 +1143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 const next = siteData.banners.carousel.map((s) =>
                                   s.id === slide.id ? { ...s, title: e.target.value } : s
                                 );
-                                onUpdateSiteData({
+                                updateDraft({
                                   ...siteData,
                                   banners: { ...siteData.banners, carousel: next }
                                 });
@@ -1021,7 +1164,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 const next = siteData.banners.carousel.map((s) =>
                                   s.id === slide.id ? { ...s, ctaLabel: e.target.value } : s
                                 );
-                                onUpdateSiteData({
+                                updateDraft({
                                   ...siteData,
                                   banners: { ...siteData.banners, carousel: next }
                                 });
@@ -1042,7 +1185,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   const next = siteData.banners.carousel.map((s) =>
                                     s.id === slide.id ? { ...s, subtitle: e.target.value } : s
                                   );
-                                  onUpdateSiteData({
+                                  updateDraft({
                                     ...siteData,
                                     banners: { ...siteData.banners, carousel: next }
                                   });
@@ -1194,6 +1337,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <img
                                 src={slot.image}
                                 alt={slot.title || `Banner ${idx + 1}`}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
                                 className="w-full max-h-52 object-cover"
                               />
                             </div>
@@ -1214,7 +1360,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 onChange={async (e) => {
                                   const f = e.target.files?.[0];
                                   if (f) {
-                                    const dataUrl = await compressImageToDataURL(f, 1400, 0.85);
+                                    const dataUrl = await compressImageToDataURL(f, 1400, 0.82);
                                     const next = promoBanners.map((b, i) =>
                                       i === idx ? { ...b, image: dataUrl, enabled: true } : b
                                     );
@@ -1243,7 +1389,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   const next = promoBanners.map((b, i) =>
                                     i === idx ? { ...b, title: e.target.value } : b
                                   );
-                                  onUpdateSiteData({
+                                  updateDraft({
                                     ...siteData,
                                     banners: { ...siteData.banners, promotional: next }
                                   });
@@ -1265,7 +1411,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     const next = promoBanners.map((b, i) =>
                                       i === idx ? { ...b, linkUrl: e.target.value } : b
                                     );
-                                    onUpdateSiteData({
+                                    updateDraft({
                                       ...siteData,
                                       banners: { ...siteData.banners, promotional: next }
                                     });
@@ -1280,7 +1426,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     const next = promoBanners.map((b, i) =>
                                       i === idx ? { ...b, linkUrl: e.target.value } : b
                                     );
-                                    onUpdateSiteData({
+                                    updateDraft({
                                       ...siteData,
                                       banners: { ...siteData.banners, promotional: next }
                                     });
@@ -1309,7 +1455,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     const next = promoBanners.map((b, i) =>
                                       i === idx ? { ...b, ctaLabel: e.target.value } : b
                                     );
-                                    onUpdateSiteData({
+                                    updateDraft({
                                       ...siteData,
                                       banners: { ...siteData.banners, promotional: next }
                                     });
@@ -1402,6 +1548,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <img
                           src={slot.image}
                           alt={slot.title || 'Banner do catálogo'}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
                           className="w-full max-h-52 object-cover"
                         />
                       </div>
@@ -1422,7 +1571,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onChange={async (e) => {
                             const f = e.target.files?.[0];
                             if (f) {
-                              const dataUrl = await compressImageToDataURL(f, 1400, 0.85);
+                              const dataUrl = await compressImageToDataURL(f, 1400, 0.82);
                               commitData(
                                 {
                                   ...siteData,
@@ -1448,7 +1597,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           type="text"
                           value={slot.title}
                           onChange={(e) =>
-                            onUpdateSiteData({
+                            updateDraft({
                               ...siteData,
                               banners: {
                                 ...siteData.banners,
@@ -1470,7 +1619,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             type="text"
                             value={slot.linkUrl}
                             onChange={(e) =>
-                              onUpdateSiteData({
+                              updateDraft({
                                 ...siteData,
                                 banners: {
                                   ...siteData.banners,
@@ -1485,7 +1634,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             value=""
                             onChange={(e) => {
                               if (!e.target.value) return;
-                              onUpdateSiteData({
+                              updateDraft({
                                 ...siteData,
                                 banners: {
                                   ...siteData.banners,
@@ -1514,7 +1663,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             disabled={!showBtn}
                             value={slot.ctaLabel || ''}
                             onChange={(e) =>
-                              onUpdateSiteData({
+                              updateDraft({
                                 ...siteData,
                                 banners: {
                                   ...siteData.banners,
@@ -1916,7 +2065,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h2 className="text-lg font-bold text-slate-900 mb-3">Logo Oficial</h2>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                   <div className="bg-[#004d61] p-4 rounded-xl flex items-center justify-center min-w-[200px] h-20">
-                    <img src={logoSrc} alt="Prévia da Logo" className="max-h-12 w-auto object-contain" />
+                    <img
+                      src={logoSrc}
+                      alt="Prévia da Logo"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (!img.dataset.fallbackApplied) {
+                          img.dataset.fallbackApplied = '1';
+                          img.src = FALLBACK_LOGO_PATH;
+                        }
+                      }}
+                      className="max-h-12 w-auto object-contain"
+                    />
                   </div>
                   <div className="space-y-2 flex-1">
                     <input
@@ -1925,7 +2085,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 800, 0.92);
+                          const dataUrl = await compressImageToDataURL(f, 800, 0.82);
                           commitData({ ...siteData, logoDataUrl: dataUrl }, 'Logo atualizada!');
                         }
                         e.target.value = '';
@@ -1955,7 +2115,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Seção &ldquo;Sobre Nós&rdquo; (#sobre)</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Edite o título, o texto institucional e opcionalmente adicione uma imagem para exibição na página inicial.
+                    Edite o título, o texto institucional e opcionalmente adicione uma imagem para exibição na página inicial (recomendado 4:3 — ex: 1200x900px).
                   </p>
                 </div>
 
@@ -1967,7 +2127,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     required
                     value={siteData.aboutUsTitle || ''}
-                    onChange={(e) => onUpdateSiteData({ ...siteData, aboutUsTitle: e.target.value })}
+                    onChange={(e) => updateDraft({ ...siteData, aboutUsTitle: e.target.value })}
                     placeholder="Ex: Sobre a Faberminas"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]"
                   />
@@ -1981,7 +2141,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     rows={4}
                     required
                     value={siteData.aboutUsText || ''}
-                    onChange={(e) => onUpdateSiteData({ ...siteData, aboutUsText: e.target.value })}
+                    onChange={(e) => updateDraft({ ...siteData, aboutUsText: e.target.value })}
                     placeholder="Descreva a atuação da Faberminas para clientes CNPJ e CPF..."
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#004d61]"
                   />
@@ -1990,7 +2150,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                   <div className="md:col-span-7 space-y-2">
                     <label className="block text-sm font-medium text-slate-700">
-                      Imagem Institucional (Opcional)
+                      Imagem Institucional (Opcional — comprimida automaticamente em Base64)
                     </label>
                     <input
                       type="file"
@@ -1998,7 +2158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 1200, 0.85);
+                          const dataUrl = await compressImageToDataURL(f, 1200, 0.82);
                           commitData(
                             { ...siteData, aboutUsImage: dataUrl },
                             'Imagem da seção Sobre Nós atualizada!'
@@ -2031,12 +2191,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <img
                           src={siteData.aboutUsImage}
                           alt={siteData.aboutUsTitle || 'Sobre a Faberminas'}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
                           className="w-full h-36 object-cover"
                         />
                       </div>
                     ) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-[#F8FAFC] p-4 text-center text-xs text-slate-500">
-                        Nenhuma imagem selecionada (layout em texto centralizado).
+                        Nenhuma imagem selecionada (exibindo espaço reservado no site).
                       </div>
                     )}
                   </div>
@@ -2070,7 +2233,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onChange={(e) => {
                             const updated = [...siteData.differentials];
                             updated[idx] = { ...updated[idx], title: e.target.value };
-                            onUpdateSiteData({ ...siteData, differentials: updated });
+                            updateDraft({ ...siteData, differentials: updated });
                           }}
                           placeholder="Título"
                           className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold"
@@ -2081,7 +2244,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onChange={(e) => {
                             const updated = [...siteData.differentials];
                             updated[idx] = { ...updated[idx], desc: e.target.value };
-                            onUpdateSiteData({ ...siteData, differentials: updated });
+                            updateDraft({ ...siteData, differentials: updated });
                           }}
                           placeholder="Descrição"
                           className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
@@ -2099,7 +2262,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.phone}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, phone: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, phone: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2109,7 +2272,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.whatsapp}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, whatsapp: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, whatsapp: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2119,7 +2282,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="email"
                       required
                       value={siteData.email}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, email: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, email: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2128,7 +2291,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <input
                       type="url"
                       value={siteData.instagram}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, instagram: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, instagram: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2138,7 +2301,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.hours}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, hours: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, hours: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2148,7 +2311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       rows={2}
                       required
                       value={siteData.address}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, address: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, address: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2158,7 +2321,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.mapsEmbed}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, mapsEmbed: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, mapsEmbed: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2168,7 +2331,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.legalName}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, legalName: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, legalName: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2178,7 +2341,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="text"
                       required
                       value={siteData.cnpj}
-                      onChange={(e) => onUpdateSiteData({ ...siteData, cnpj: e.target.value })}
+                      onChange={(e) => updateDraft({ ...siteData, cnpj: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                     />
                   </div>
@@ -2201,17 +2364,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ================================================================= */}
           {activeTab === 'deploy' && (
             <div className="space-y-6">
+              {/* Opção 1: Site Autônomo (.html) */}
               <div className="bg-white border-2 border-[#004d61] rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#004d61] bg-[#eef5f7] px-3 py-1 rounded-lg">
+                    Persistência Global Cross-Device
+                  </span>
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-lg ${
+                      hasUnexportedLocalChanges
+                        ? 'bg-amber-100 text-amber-900'
+                        : 'bg-emerald-50 text-emerald-800'
+                    }`}
+                  >
+                    {hasUnexportedLocalChanges
+                      ? 'Status: Edições locais pendentes de exportação'
+                      : 'Status: Sincronizado'}
+                  </span>
+                </div>
+
                 <div className="space-y-2">
                   <h2 className="text-xl font-extrabold text-[#004d61]">
-                    Publicação Direta e Permanente em Todos os Dispositivos
+                    Salvar e Publicar para Todos os Dispositivos (.html)
                   </h2>
                   <p className="text-sm text-slate-600 leading-relaxed max-w-3xl">
-                    O botão abaixo gera um arquivo <strong>index.html</strong> autônomo contendo todo o estado atual do site embutido (produtos, SKUs, segmentos, cômodos, fotos em Base64, slides do carrossel, banners secundários e contatos). Ao publicar esse arquivo, todos os visitantes verão as atualizações imediatamente em qualquer dispositivo.
+                    O botão abaixo gera um arquivo <strong>index.html</strong> autônomo com todo o estado global embutido diretamente em <code>INITIAL_SITE_DATA</code> (banners, carrossel, foto de Sobre Nós, produtos, SKUs, categorias e contatos em Base64). Ao subir esse arquivo na sua hospedagem, qualquer celular ou computador abrirá o site exatamente como você salvou — sem depender de cache local.
                   </p>
                 </div>
 
-                <div>
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     disabled={exportingHtml}
@@ -2220,38 +2401,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   >
                     <Download className="w-4 h-4" />
                     <span>
-                      {exportingHtml ? 'Gerando arquivo...' : 'Baixar Site Atualizado (.html)'}
+                      {exportingHtml ? 'Gerando arquivo...' : 'Salvar e Baixar Site Atualizado (.html)'}
                     </span>
                   </button>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                <h3 className="text-lg font-bold text-slate-900">Backup JSON e Restauração</h3>
+              {/* Opção 2: Configuração Portável site-config.json (GitHub / Vercel) */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 space-y-5">
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Exportar / Importar Configuração Global (site-config.json)
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed max-w-3xl">
+                    Para projetos publicados via repositório (GitHub / Vercel / Vite), exporte o arquivo <strong>site-config.json</strong> e substitua o conteúdo de <code>src/data/siteConfig.json</code> no código-fonte antes de fazer deploy. Assim todos os visitantes carregam automaticamente suas últimas imagens e produtos em produção.
+                  </p>
+                </div>
+
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      const blob = new Blob([JSON.stringify(siteData, null, 2)], {
-                        type: 'application/json;charset=utf-8'
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'faberminas-backup.json';
-                      a.click();
-                      URL.revokeObjectURL(url);
-                      showAdminToast('Backup JSON exportado!');
-                    }}
+                    onClick={handleExportSiteConfigJson}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#004d61] text-[#004d61] hover:bg-[#eef5f7] font-semibold text-sm transition cursor-pointer"
                   >
                     <FileJson className="w-4 h-4" />
-                    <span>Exportar Backup (.json)</span>
+                    <span>Exportar Configuração (site-config.json)</span>
                   </button>
 
                   <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm transition cursor-pointer">
                     <Upload className="w-4 h-4" />
-                    <span>Importar Backup (.json)</span>
+                    <span>Importar Configuração (.json)</span>
                     <input
                       type="file"
                       accept=".json,application/json"
@@ -2263,60 +2442,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         reader.onload = () => {
                           try {
                             const imported = JSON.parse(reader.result as string);
-                            if (imported && Array.isArray(imported.products)) {
-                              const impBanners = imported.banners || {};
-                              const normalizedPromo = Array.isArray(impBanners.promotional)
-                                ? impBanners.promotional
-                                : [impBanners.secondary1, impBanners.secondary2, impBanners.home]
-                                    .filter((b) => Boolean(b && b.image))
-                                    .map((b, idx) => ({
-                                      id: b.id || `promo-${idx + 1}`,
-                                      enabled: b.enabled !== false,
-                                      image: b.image,
-                                      title: b.title || '',
-                                      linkUrl: b.linkUrl || '',
-                                      showButton: Boolean(b.showButton),
-                                      ctaLabel: b.ctaLabel || 'Ver ofertas'
-                                    }));
-
-                              const normalizedProducts = imported.products.map((p: Product) => ({
-                                ...p,
-                                qtdMinima: Math.max(1, Number(p.qtdMinima) || 1)
-                              }));
-
-                              commitData(
-                                {
-                                  ...DEFAULT_SITE_DATA,
-                                  ...imported,
-                                  products: normalizedProducts,
-                                  banners: {
-                                    carousel: Array.isArray(impBanners.carousel) && impBanners.carousel.length > 0
-                                      ? impBanners.carousel.map((s: HeroSlide) => ({
-                                          ...s,
-                                          showButton: s.showButton !== false
-                                        }))
-                                      : DEFAULT_SITE_DATA.banners.carousel,
-                                    promotional: normalizedPromo,
-                                    catalog: {
-                                      ...DEFAULT_SITE_DATA.banners.catalog,
-                                      ...(impBanners.catalog || {})
-                                    }
-                                  },
-                                  categories:
-                                    Array.isArray(imported.categories) && imported.categories.length > 0
-                                      ? imported.categories
-                                      : DEFAULT_SITE_DATA.categories,
-                                  rooms:
-                                    Array.isArray(imported.rooms) && imported.rooms.length > 0
-                                      ? imported.rooms
-                                      : DEFAULT_SITE_DATA.rooms,
-                                  segments:
-                                    Array.isArray(imported.segments) && imported.segments.length > 0
-                                      ? imported.segments
-                                      : DEFAULT_SITE_DATA.segments
-                                },
-                                'Backup importado com sucesso!'
+                            if (imported && typeof imported === 'object' && Array.isArray(imported.products)) {
+                              const normalized = mergeSiteDataWithDefaults(
+                                DEFAULT_SITE_DATA,
+                                imported,
+                                true
                               );
+                              commitData(normalized, 'Configuração JSON importada com sucesso!');
                             } else {
                               showAdminToast('Arquivo JSON inválido.');
                             }
@@ -2346,7 +2478,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         type="button"
                         onClick={() => {
                           localStorage.removeItem(STORAGE_KEY);
+                          localStorage.removeItem(ADMIN_SYNC_META_KEY);
                           LEGACY_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k));
+                          setExportMeta({ lastExportedAt: 0, lastExportedType: null });
                           onRestoreDefaults();
                           setConfirmRestore(false);
                           showAdminToast('Dados padrão restaurados.');

@@ -27,50 +27,71 @@ export function onlyDigits(str: string): string {
   return (str || '').replace(/\D/g, '');
 }
 
+export const FALLBACK_LOGO_PATH = `${CLEAN_BASE}logo.png`;
+
+export function sanitizePersistentMediaUrl(url?: string): string {
+  const trimmed = (url || '').trim();
+  if (!trimmed || trimmed.startsWith('blob:')) return '';
+  return trimmed;
+}
+
 export function resolveLogoSrc(logoDataUrl?: string): string {
-  const raw = logoDataUrl || EXACT_LOGO_PATH;
-  if (raw.startsWith('data:') || raw.startsWith('http')) {
+  const raw = sanitizePersistentMediaUrl(logoDataUrl) || EXACT_LOGO_PATH;
+  if (raw.startsWith('data:') || raw.startsWith('http://') || raw.startsWith('https://')) {
     return raw;
+  }
+  if (raw.startsWith('./')) {
+    return `${CLEAN_BASE}${raw.slice(2)}`;
   }
   if (raw.startsWith('/') && !raw.startsWith(CLEAN_BASE)) {
     return `${CLEAN_BASE}${raw.replace(/^\/+/, '')}`;
   }
-  return raw;
+  return `${CLEAN_BASE}${raw.replace(/^\.\//, '')}`.replace(/([^:]\/)\/+/g, '$1');
 }
 
-export function compressImageToDataURL(file: File, maxWidth = 720, quality = 0.82): Promise<string> {
+export function compressImageToDataURL(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve) => {
     if (file.type === 'image/svg+xml') {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => resolve((reader.result as string) || '');
+      reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
+      const originalDataUrl = (event.target?.result as string) || '';
       const img = new Image();
       img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+        let width = img.width || maxWidth;
+        let height = img.height || maxWidth;
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
         }
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          resolve(canvas.toDataURL(outputType, quality));
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          // Preferir WebP (mantém transparência e comprime banners/fotos com alta fidelidade)
+          const webpUrl = canvas.toDataURL('image/webp', quality);
+          if (webpUrl && webpUrl.startsWith('data:image/webp')) {
+            resolve(webpUrl);
+            return;
+          }
+          // Fallback caso o navegador não encode WebP
+          const fallbackMime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          resolve(canvas.toDataURL(fallbackMime, quality));
         } else {
-          resolve(event.target?.result as string);
+          resolve(originalDataUrl);
         }
       };
-      img.onerror = () => resolve(event.target?.result as string);
-      img.src = event.target?.result as string;
+      img.onerror = () => resolve(originalDataUrl);
+      img.src = originalDataUrl;
     };
+    reader.onerror = () => resolve('');
     reader.readAsDataURL(file);
   });
 }

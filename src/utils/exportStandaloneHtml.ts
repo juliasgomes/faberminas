@@ -1,21 +1,27 @@
 import { SiteData } from '../types';
-import { EMBEDDED_FAVICON } from '../data/defaultSiteData';
-import { resolveLogoSrc } from './helpers';
+import {
+  EMBEDDED_FAVICON,
+  EMBEDDED_FAVICON_32,
+  EMBEDDED_FAVICON_SVG,
+  OG_BRAND_IMAGE_PATH
+} from '../data/defaultSiteData';
+import { resolveLogoSrc, sanitizePersistentMediaUrl } from './helpers';
 
 async function toInlineDataUrl(src: string): Promise<string> {
-  if (!src || src.startsWith('data:')) return src;
+  const clean = sanitizePersistentMediaUrl(src);
+  if (!clean || clean.startsWith('data:')) return clean;
   try {
-    const res = await fetch(src);
-    if (!res.ok) return src;
+    const res = await fetch(clean);
+    if (!res.ok) return clean;
     const blob = await res.blob();
     return await new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string) || src);
-      reader.onerror = () => resolve(src);
+      reader.onloadend = () => resolve((reader.result as string) || clean);
+      reader.onerror = () => resolve(clean);
       reader.readAsDataURL(blob);
     });
   } catch {
-    return src;
+    return clean;
   }
 }
 
@@ -26,15 +32,92 @@ function isoPoint(u: number, v: number, z = 0): string {
 }
 
 export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void> {
-  const resolvedLogo = await toInlineDataUrl(resolveLogoSrc(siteData.logoDataUrl));
+  const [
+    resolvedLogo,
+    resolvedOgImage,
+    resolvedAboutImage,
+    resolvedCarousel,
+    resolvedPromotional,
+    resolvedCatalogImage,
+    resolvedProducts
+  ] = await Promise.all([
+    toInlineDataUrl(resolveLogoSrc(siteData.logoDataUrl)),
+    toInlineDataUrl(OG_BRAND_IMAGE_PATH),
+    siteData.aboutUsImage ? toInlineDataUrl(siteData.aboutUsImage) : Promise.resolve(''),
+    Promise.all(
+      (siteData.banners?.carousel || []).map(async (s) => ({
+        ...s,
+        image: s.image ? await toInlineDataUrl(s.image) : ''
+      }))
+    ),
+    Promise.all(
+      (siteData.banners?.promotional || []).map(async (b) => ({
+        ...b,
+        image: b.image ? await toInlineDataUrl(b.image) : ''
+      }))
+    ),
+    siteData.banners?.catalog?.image
+      ? toInlineDataUrl(siteData.banners.catalog.image)
+      : Promise.resolve(''),
+    Promise.all(
+      (siteData.products || []).map(async (p) => ({
+        ...p,
+        image: p.image ? await toInlineDataUrl(p.image) : ''
+      }))
+    )
+  ]);
+
+  const exportedAt = Math.max(Date.now(), Number(siteData.updatedAt || 0));
   const payloadData: SiteData = {
     ...siteData,
-    updatedAt: Date.now(),
-    logoDataUrl: resolvedLogo
+    updatedAt: exportedAt,
+    logoDataUrl: resolvedLogo,
+    aboutUsImage: resolvedAboutImage,
+    products: resolvedProducts,
+    banners: {
+      ...siteData.banners,
+      carousel: resolvedCarousel,
+      promotional: resolvedPromotional,
+      catalog: {
+        ...siteData.banners.catalog,
+        image: resolvedCatalogImage
+      }
+    }
   };
 
   const serializedJson = JSON.stringify(payloadData).replace(/<\/script>/gi, '<\\/script>');
-  const safeFavicon = EMBEDDED_FAVICON;
+  const safeOgImage = resolvedOgImage || EMBEDDED_FAVICON;
+  const schemaJson = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': ['WholesaleStore', 'LocalBusiness'],
+    name: 'FaberMinas Distribuidora',
+    alternateName: ['Faberminas', 'FaberMinas'],
+    legalName: 'FaberMinas Distribuidora',
+    taxID: payloadData.cnpj || '27.424.764/0001-60',
+    description:
+      'Distribuidora atacadista e varejista de materiais de limpeza profissional, higiene pessoal, descartáveis, EPIs, linha hospitalar, ferramentas e suprimentos corporativos e residenciais (CNPJ e CPF) em Belo Horizonte e Região Metropolitana.',
+    image: safeOgImage,
+    telephone: '+55-31-3333-4455',
+    email: payloadData.email || 'contato@faberminas.com.br',
+    priceRange: '$$',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'R. dos Arquitetos, 408 — Alípio de Melo',
+      addressLocality: 'Belo Horizonte',
+      addressRegion: 'MG',
+      postalCode: '30840-160',
+      addressCountry: 'BR'
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: -19.8878,
+      longitude: -44.0005
+    },
+    openingHours: 'Mo-Fr 08:00-18:00',
+    areaServed: 'Belo Horizonte e Região Metropolitana',
+    keywords:
+      'material de limpeza, produtos de limpeza, distribuidora de material de limpeza bh, distribuidora de higiene e limpeza belo horizonte, descartaveis bh, epi belo horizonte, material hospitalar bh, suprimentos corporativos, atacado material de limpeza bh, distribuidora alipio de melo, faberminas'
+  }).replace(/<\/script>/gi, '<\\/script>');
 
   const html = `<!doctype html>
 <html lang="pt-BR" class="scroll-smooth">
@@ -43,16 +126,41 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#004d61" />
   <meta name="color-scheme" content="light only" />
+
+  <!-- SEO Principal & Indexação Local -->
   <title>Faberminas</title>
-  <meta name="description" content="Materiais de higiene, limpeza, descartáveis e suprimentos em Belo Horizonte e Região Metropolitana." />
-  <meta property="og:title" content="Faberminas" />
-  <meta property="og:description" content="Materiais de higiene, limpeza, descartáveis e suprimentos em Belo Horizonte e Região Metropolitana." />
+  <meta name="description" content="Distribuidora de materiais de limpeza, higiene e descartáveis em BH e Região Metropolitana. Atacado e varejo para CNPJ e CPF com entrega própria rápida." />
+  <meta name="keywords" content="material de limpeza, produtos de limpeza, distribuidora de material de limpeza bh, distribuidora de higiene e limpeza belo horizonte, produtos de limpeza profissional, produtos de limpeza concentrados, descartaveis bh, papel toalha interfolhado, papel higienico institucional, saco de lixo reforçado, sabonete liquido, alcool 70, desinfetante profissional, agua sanitaria, detergente neutro, luva nitrilica, luva de latex, luva de vinil, epi belo horizonte, equipamentos de protecao individual, material hospitalar bh, fralda geriatrica, fralda infantil, rodos e vassouras, pano de chao algodao, flanela limpeza, lixeira com pedal, dispenser papel toalha, suprimentos corporativos, limpeza para condominios, limpeza para escritorios, limpeza para clinicas e hospitais, limpeza para restaurantes, atacado material de limpeza bh, comprar material de limpeza cpf e cnpj, distribuidora alipio de melo, faberminas, faberminas distribuidora" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="FaberMinas Distribuidora" />
+  <meta name="geo.region" content="BR-MG" />
+  <meta name="geo.placename" content="Belo Horizonte" />
+  <meta name="geo.position" content="-19.8878;-44.0005" />
+  <meta name="ICBM" content="-19.8878, -44.0005" />
+
+  <!-- Open Graph / WhatsApp / Redes Sociais -->
   <meta property="og:type" content="website" />
-  <link rel="icon" type="image/png" href="${safeFavicon}" />
-  <link rel="apple-touch-icon" href="${safeFavicon}" />
+  <meta property="og:site_name" content="FaberMinas" />
+  <meta property="og:title" content="FaberMinas | Distribuidora de Materiais de Limpeza, Higiene e Descartáveis em BH" />
+  <meta property="og:description" content="Distribuidora de materiais de limpeza, higiene e descartáveis em BH e Região Metropolitana. Atacado e varejo para CNPJ e CPF com entrega própria rápida." />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:image" content="${safeOgImage}" />
+  <meta property="og:image:alt" content="FaberMinas — Materiais de Limpeza, Higiene e Descartáveis em Belo Horizonte" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FaberMinas | Distribuidora de Materiais de Limpeza, Higiene e Descartáveis em BH" />
+  <meta name="twitter:description" content="Distribuidora de materiais de limpeza, higiene e descartáveis em BH e Região Metropolitana. Atacado e varejo para CNPJ e CPF com entrega própria rápida." />
+  <meta name="twitter:image" content="${safeOgImage}" />
+
+  <!-- Favicon Multi-Formato Padronizado -->
+  <link rel="icon" type="image/svg+xml" href="${EMBEDDED_FAVICON_SVG}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="${EMBEDDED_FAVICON_32}" />
+  <link rel="shortcut icon" href="${EMBEDDED_FAVICON_32}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="${EMBEDDED_FAVICON}" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">${schemaJson}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } };
@@ -80,8 +188,9 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
     .svg-room-zone:hover { transform: translateY(-4px); filter: drop-shadow(0 10px 16px rgba(0,77,97,0.22)); }
     .svg-room-zone:hover .room-floor { fill: #004d61; fill-opacity: 0.14; stroke: #004d61; stroke-width: 2.5; }
   </style>
-  <script>
-    window.__FABERMINAS_SITE_DATA__ = ${serializedJson};
+  <script id="initial-site-data">
+    const INITIAL_SITE_DATA = ${serializedJson};
+    window.__FABERMINAS_SITE_DATA__ = INITIAL_SITE_DATA;
   </script>
 </head>
 <body class="bg-white text-slate-800 antialiased selection:bg-[#004d61] selection:text-white">
@@ -89,14 +198,14 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
   <div id="portal-root"></div>
   <script>
     (function () {
-      const STORAGE_KEY = 'faberminas_site_data_v6';
-      const BASE_DATA = window.__FABERMINAS_SITE_DATA__;
+      const STORAGE_KEY = 'faberminas_site_data_v7';
+      const BASE_DATA = INITIAL_SITE_DATA;
       let SITE_DATA = BASE_DATA;
       try {
         const localRaw = localStorage.getItem(STORAGE_KEY);
         if (localRaw) {
           const parsed = JSON.parse(localRaw);
-          if (parsed && (!BASE_DATA.updatedAt || (parsed.updatedAt && parsed.updatedAt >= BASE_DATA.updatedAt))) {
+          if (parsed && (!BASE_DATA.updatedAt || (parsed.updatedAt && parsed.updatedAt > BASE_DATA.updatedAt))) {
             SITE_DATA = Object.assign({}, BASE_DATA, parsed);
           }
         }
@@ -313,7 +422,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
 
         return '<header class="sticky top-0 z-40 bg-[#004d61] text-white shadow-md">' +
           '<div class="w-full px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-4">' +
-            '<a href="javascript:void(0)" onclick="goHomeSection()" class="shrink-0"><img src="' + esc(SITE_DATA.logoDataUrl) + '" alt="Faberminas" class="h-9 sm:h-12 w-auto object-contain" /></a>' +
+            '<a href="javascript:void(0)" onclick="goHomeSection()" class="shrink-0"><img src="' + esc(SITE_DATA.logoDataUrl) + '" alt="Faberminas" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'inline\\'" class="h-9 sm:h-12 w-auto object-contain" /><span style="display:none" class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">Faberminas</span></a>' +
             '<div class="hidden md:flex flex-1"><form onsubmit="event.preventDefault();goCatalog(\\'todos\\',\\'todos\\',\\'todos\\')" class="flex w-full bg-white rounded-xl overflow-hidden shadow-sm"><input type="text" value="' + esc(searchQuery) + '" oninput="searchQuery=this.value" placeholder="Busque por produtos de higiene, limpeza, descartáveis ou código SKU..." class="flex-1 px-4 py-2.5 text-sm text-slate-800 focus:outline-none" /><button type="submit" class="px-5 bg-[#eef5f7] text-[#004d61] font-bold text-sm">Buscar</button></form></div>' +
             '<div class="flex items-center gap-2 shrink-0">' +
               '<button type="button" onclick="window.__toggleDrawer(true)" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-semibold cursor-pointer"><span>Cesta de Cotação</span><span class="px-2 py-0.5 text-xs font-bold rounded-full bg-white text-[#004d61]">' + total + '</span></button>' +
@@ -350,7 +459,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
         const s = slides[slideIdx % slides.length];
         const showBtn = s.showButton !== false && s.ctaLabel;
         const makeWhole = !showBtn && s.ctaLink;
-        const inner = (s.image ? '<img src="' + esc(s.image) + '" class="absolute inset-0 w-full h-full object-cover" />' : '') +
+        const inner = (s.image ? '<img src="' + esc(s.image) + '" alt="' + esc(s.title || 'Banner Faberminas') + '" onerror="this.style.display=\\'none\\'" class="absolute inset-0 w-full h-full object-cover" />' : '') +
           '<div class="relative max-w-4xl mx-auto px-12 py-16 text-center">' +
             (s.title ? '<h1 class="text-3xl sm:text-5xl font-extrabold mb-4">' + esc(s.title) + '</h1>' : '') +
             (s.subtitle ? '<p class="text-base sm:text-lg text-white/90 mb-7">' + esc(s.subtitle) + '</p>' : '') +
@@ -387,7 +496,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
             '<path d="M0,0 C-10,-14 -16,-22 -16,-31 A16,16 0 1,1 16,-31 C16,-22 10,-14 0,0 Z" fill="#004d61" stroke="#fff" stroke-width="2.5"/>' +
             '<circle cx="0" cy="-31" r="6" fill="#fff"/>' +
             '<rect x="-68" y="12" width="136" height="26" rx="6" fill="#fff" stroke="#004d61" stroke-width="1.5"/>' +
-            '<text x="0" y="29" text-anchor="middle" fill="#004d61" font-size="11.5" font-weight="700">' + esc(r.shortLabel) + ' (' + countRoom(r.id) + ')</text>' +
+            '<text x="0" y="29" text-anchor="middle" fill="#004d61" font-size="11.5" font-weight="700">' + (countRoom(r.id) > 0 ? esc(r.shortLabel) + ' (' + countRoom(r.id) + ')' : esc(r.shortLabel)) + '</text>' +
           '</g>';
         }).join('');
 
@@ -423,8 +532,8 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
               '<div><h3 class="text-2xl font-extrabold">' + esc(room.label) + '</h3><p class="text-sm text-white/85 mt-1">' + esc(room.desc) + '</p></div>' +
               '<button type="button" onclick="window.__openRoomModal(null)" class="px-3 py-1 rounded bg-white/15 font-bold cursor-pointer">Fechar</button>' +
             '</div>' +
-            '<div class="p-6 overflow-y-auto bg-[#F8FAFC] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">' +
-              items.map(p => '<div onclick="openProductDetail(' + p.id + ')" class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col justify-between gap-3 cursor-pointer hover:border-[#004d61]/50 transition"><div>' + (p.sku ? '<span class="text-[11px] font-mono text-slate-400">' + esc(p.sku) + '</span>' : '') + '<h4 class="font-bold text-slate-900 text-sm">' + esc(p.name) + '</h4>' + (p.measures ? '<p class="text-xs text-[#004d61] font-medium mt-1">' + esc(p.measures) + '</p>' : '') + '</div><button type="button" onclick="event.stopPropagation();addToQuote(' + p.id + ')" class="w-full py-2 rounded-lg bg-[#004d61] text-white text-xs font-bold cursor-pointer">Adicionar à cotação</button></div>').join('') +
+            '<div class="p-6 overflow-y-auto bg-[#F8FAFC] ' + (items.length ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4' : 'text-center') + '">' +
+              (items.length ? items.map(p => '<div onclick="openProductDetail(' + p.id + ')" class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col justify-between gap-3 cursor-pointer hover:border-[#004d61]/50 transition"><div>' + (p.sku ? '<span class="text-[11px] font-mono text-slate-400">' + esc(p.sku) + '</span>' : '') + '<h4 class="font-bold text-slate-900 text-sm">' + esc(p.name) + '</h4>' + (p.measures ? '<p class="text-xs text-[#004d61] font-medium mt-1">' + esc(p.measures) + '</p>' : '') + '</div><button type="button" onclick="event.stopPropagation();addToQuote(' + p.id + ')" class="w-full py-2 rounded-lg bg-[#004d61] text-white text-xs font-bold cursor-pointer">Adicionar à cotação</button></div>').join('') : '<p class="text-sm text-slate-600 py-6">Em breve novidades cadastradas para este ambiente — consulte nossa equipe pelo WhatsApp.</p>') +
             '</div>' +
             (items.length ? '<div class="px-6 py-4 bg-white border-t flex justify-end"><button type="button" onclick="bulkAddRoom(\\'' + esc(room.id) + '\\')" class="px-6 py-3 rounded-xl bg-[#004d61] text-white font-bold text-sm cursor-pointer">Adicionar kit completo do ambiente (' + items.length + ')</button></div>' : '') +
           '</div>' +
@@ -452,7 +561,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
             '<div class="p-6 space-y-5">' +
               '<div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">' +
                 '<div class="sm:col-span-5 h-52 bg-[#F8FAFC] rounded-xl border border-slate-200 flex items-center justify-center p-4">' +
-                  (p.image ? '<img src="' + esc(p.image) + '" class="max-h-full max-w-full object-contain" />' : '<span class="text-xs font-bold text-[#004d61]/40">FABERMINAS</span>') +
+                  (p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" onerror="this.style.display=\\'none\\'" class="max-h-full max-w-full object-contain" />' : '<span class="text-xs font-bold text-[#004d61]/40">FABERMINAS</span>') +
                 '</div>' +
                 '<div class="sm:col-span-7 space-y-3">' +
                   (p.sku ? '<div><span class="text-[11px] font-bold uppercase text-slate-400">Código (SKU)</span><p class="font-mono font-bold text-sm text-[#004d61]">' + esc(p.sku) + '</p></div>' : '') +
@@ -537,7 +646,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
             pageItems.map(p =>
               '<article onclick="openProductDetail(' + p.id + ')" class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-[#004d61]/50 hover:shadow-md transition">' +
                 '<div>' +
-                  '<div class="h-36 bg-white border-b flex items-center justify-center p-2">' + (p.image ? '<img src="' + esc(p.image) + '" class="w-full h-full object-contain" />' : '<span class="text-xs font-bold text-[#004d61]/50">FABERMINAS</span>') + '</div>' +
+                  '<div class="h-36 bg-white border-b flex items-center justify-center p-2">' + (p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'inline\\'" class="w-full h-full object-contain" /><span style="display:none" class="text-xs font-bold text-[#004d61]/50">FABERMINAS</span>' : '<span class="text-xs font-bold text-[#004d61]/50">FABERMINAS</span>') + '</div>' +
                   '<div class="p-4">' +
                     (p.sku ? '<span class="block text-[11px] font-mono text-slate-400">' + esc(p.sku) + '</span>' : '') +
                     '<h3 class="font-bold text-slate-900 text-sm mt-1 line-clamp-2">' + esc(p.name) + '</h3>' +
@@ -569,7 +678,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
             '</div>' +
             '<div class="lg:col-span-5">' +
               (SITE_DATA.aboutUsImage
-                ? '<div class="rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl bg-[#003a49] aspect-[4/3]"><img src="' + esc(SITE_DATA.aboutUsImage) + '" alt="' + esc(SITE_DATA.aboutUsTitle || 'Faberminas') + '" class="w-full h-full object-cover" /></div>'
+                ? '<div class="rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl bg-[#003a49] aspect-[4/3]"><img src="' + esc(SITE_DATA.aboutUsImage) + '" alt="' + esc(SITE_DATA.aboutUsTitle || 'Faberminas') + '" onerror="this.style.display=\\'none\\'" class="w-full h-full object-cover" /></div>'
                 : '<div class="rounded-2xl border-2 border-dashed border-white/30 bg-[#003a49]/70 aspect-[4/3] flex flex-col items-center justify-center p-6 text-center"><p class="text-sm sm:text-base font-bold text-white">Espaço para foto institucional</p><p class="text-xs text-white/75 mt-1">Adicione uma foto pelo painel administrativo.</p></div>') +
             '</div>' +
           '</div></section>';
@@ -586,9 +695,9 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
               const hasLink = Boolean(slot.linkUrl && slot.linkUrl.trim());
               const showBtn = Boolean(slot.showButton && hasLink);
               if (hasLink && !showBtn) {
-                return '<div class="rounded-2xl overflow-hidden border shadow-sm bg-white"><a href="' + esc(slot.linkUrl) + '" onclick="event.preventDefault();handleTargetLink(\\'' + esc(slot.linkUrl) + '\\')" class="block w-full cursor-pointer"><img src="' + esc(slot.image) + '" class="w-full max-h-72 object-cover" /></a></div>';
+                return '<div class="promo-card rounded-2xl overflow-hidden border shadow-sm bg-white"><a href="' + esc(slot.linkUrl) + '" onclick="event.preventDefault();handleTargetLink(\\'' + esc(slot.linkUrl) + '\\')" class="block w-full cursor-pointer"><img src="' + esc(slot.image) + '" alt="' + esc(slot.title || 'Campanha Faberminas') + '" onerror="this.closest(\\'.promo-card\\').style.display=\\'none\\'" class="w-full max-h-72 object-cover" /></a></div>';
               }
-              return '<div class="relative rounded-2xl overflow-hidden border shadow-sm bg-white"><img src="' + esc(slot.image) + '" class="w-full max-h-72 object-cover" />' +
+              return '<div class="promo-card relative rounded-2xl overflow-hidden border shadow-sm bg-white"><img src="' + esc(slot.image) + '" alt="' + esc(slot.title || 'Campanha Faberminas') + '" onerror="this.closest(\\'.promo-card\\').style.display=\\'none\\'" class="w-full max-h-72 object-cover" />' +
                 (showBtn ? '<div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-[#002b36]/80 to-transparent flex justify-end"><button type="button" onclick="handleTargetLink(\\'' + esc(slot.linkUrl) + '\\')" class="px-4 py-2 rounded-xl bg-white text-[#004d61] font-bold text-xs shadow cursor-pointer">' + esc(slot.ctaLabel || 'Ver ofertas') + ' &rarr;</button></div>' : '') +
               '</div>';
             }).join('') +
@@ -627,6 +736,7 @@ export async function downloadUpdatedSiteHtml(siteData: SiteData): Promise<void>
         const footer = '<footer class="bg-[#004d61] text-white py-10"><div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between gap-4 text-sm">' +
           '<div><p class="font-bold">' + esc(SITE_DATA.legalName) + ' • CNPJ: ' + esc(SITE_DATA.cnpj) + '</p><p class="text-white/75">© 2026 Faberminas. Todos os direitos reservados.</p></div>' +
           '<p class="text-white/80 whitespace-pre-line">' + esc(SITE_DATA.address) + '</p>' +
+          '<div class="sr-only"><h2>FaberMinas Distribuidora de Materiais de Limpeza, Higiene e Descartáveis em Belo Horizonte</h2><p>Atacado e varejo para CNPJ e CPF em BH e Região Metropolitana: papel toalha interfolhado, papel higiênico institucional, saco de lixo reforçado, sabonete líquido, álcool 70, desinfetante profissional, água sanitária, detergente neutro, luva nitrílica, luva de látex, luva de vinil, EPIs, material hospitalar, fraldas, rodos, vassouras, panos de chão e suprimentos corporativos no Alípio de Melo.</p></div>' +
         '</div></footer>';
 
         document.getElementById('app').innerHTML = renderHeader() + '<main>' + (route.startsWith('#/produtos') ? renderCatalog() : renderHome()) + '</main>' + footer;

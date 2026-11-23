@@ -82,6 +82,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [recentlyAddedId, setRecentlyAddedId] = useState<number | null>(null);
   const [bulkAddedFeedback, setBulkAddedFeedback] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Record<number, boolean>>({});
+  const [catalogBannerBroken, setCatalogBannerBroken] = useState(false);
+
+  useEffect(() => {
+    setCatalogBannerBroken(false);
+  }, [bannerCatalog?.image]);
 
   const whatsDigits = onlyDigits(whatsapp);
 
@@ -494,8 +499,8 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       className="animate-view-enter min-h-[75vh] bg-[#F8FAFC] py-8 sm:py-12"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Banner Promocional Dinâmico do Catálogo (oculto se sem imagem) */}
-        {bannerCatalog?.enabled && bannerCatalog?.image && (() => {
+        {/* Banner Promocional Dinâmico do Catálogo (oculto se sem imagem ou erro de carregamento) */}
+        {bannerCatalog?.enabled && bannerCatalog?.image && !catalogBannerBroken && (() => {
           const hasLink = Boolean(bannerCatalog.linkUrl && bannerCatalog.linkUrl.trim());
           const showBtn = Boolean(bannerCatalog.showButton && hasLink);
           const isExternal = hasLink && /^https?:\/\//i.test(bannerCatalog.linkUrl);
@@ -520,6 +525,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                     src={bannerCatalog.image}
                     alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
                     referrerPolicy="no-referrer"
+                    onError={() => setCatalogBannerBroken(true)}
                     className="w-full max-h-60 sm:max-h-72 object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                   />
                 </a>
@@ -533,6 +539,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 src={bannerCatalog.image}
                 alt={bannerCatalog.title || 'Destaque promocional Faberminas'}
                 referrerPolicy="no-referrer"
+                onError={() => setCatalogBannerBroken(true)}
                 className="w-full max-h-60 sm:max-h-72 object-cover"
               />
               {showBtn && (
