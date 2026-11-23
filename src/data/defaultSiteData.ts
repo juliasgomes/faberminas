@@ -231,7 +231,10 @@ export function mergeSiteDataWithDefaults(
     heroBgUrl: sanitizeMediaString(raw.heroBgUrl),
     aboutUsTitle: raw.aboutUsTitle ?? base.aboutUsTitle,
     aboutUsText: raw.aboutUsText ?? base.aboutUsText,
-    aboutUsImage: sanitizeMediaString(raw.aboutUsImage) || base.aboutUsImage || '',
+    aboutUsImage:
+      raw.aboutUsImage !== undefined
+        ? sanitizeMediaString(raw.aboutUsImage)
+        : base.aboutUsImage || '',
     differentials:
       Array.isArray(raw.differentials) && raw.differentials.length > 0
         ? raw.differentials
@@ -257,7 +260,10 @@ export function mergeSiteDataWithDefaults(
       catalog: {
         ...base.banners.catalog,
         ...(rawBanners.catalog || {}),
-        image: sanitizeMediaString(rawBanners.catalog?.image) || base.banners.catalog.image
+        image:
+          rawBanners.catalog?.image !== undefined
+            ? sanitizeMediaString(rawBanners.catalog.image)
+            : base.banners.catalog.image
       }
     }
   };

@@ -139,6 +139,10 @@ export default function App() {
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
   const autoPushedEmptyCloudRef = useRef<boolean>(false);
+  const cloudMetaRef = useRef<CloudSnapshotState>(cloudMeta);
+  const cloudWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const activeCloudWritesRef = useRef<number>(0);
+  const hasPendingLocalDraftRef = useRef<boolean>(false);
 
   // Filtros e Busca Global (#/produtos e Header)
   const initialFilters = parseCatalogFiltersFromHash(window.location.hash || '');
@@ -209,17 +213,20 @@ export default function App() {
   // Sincronização em tempo real com Firestore (fotos, banners, produtos e textos em todos os dispositivos)
   useEffect(() => {
     const unsub = subscribeToCloudSiteData((merged, meta) => {
+      cloudMetaRef.current = meta;
       setCloudMeta(meta);
       const cloudHasContent =
         meta.hasSettingsDoc || meta.productDocsCount > 0 || meta.bannerDocsCount > 0;
-      if (cloudHasContent) {
+      if (cloudHasContent && activeCloudWritesRef.current === 0) {
         lastCloudSyncedDataRef.current = merged;
-        siteDataRef.current = merged;
-        setSiteData(merged);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        } catch {
-          // Ignora limite de quota local se houver muitas imagens: Firestore mantém o estado global
+        if (!hasPendingLocalDraftRef.current) {
+          siteDataRef.current = merged;
+          setSiteData(merged);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          } catch {
+            // Ignora limite de quota local se houver muitas imagens: Firestore mantém o estado global
+          }
         }
       }
     });
@@ -355,7 +362,23 @@ export default function App() {
       .slice(0, 7);
   }, [searchQuery, siteData.products, siteData.categories, siteData.rooms]);
 
-  const persistSiteData = (nextData: SiteData, commitToCloud = true) => {
+  const formatCloudErrorMessage = (err: unknown): string => {
+    const raw = err instanceof Error ? err.message : String(err || 'Falha ao salvar na nuvem.');
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.error === 'string') {
+        return `${parsed.error}${parsed.path ? ` (${parsed.path})` : ''}`;
+      }
+    } catch {
+      // ignore non-JSON errors
+    }
+    return raw;
+  };
+
+  const persistSiteData = async (
+    nextData: SiteData,
+    commitToCloud = true
+  ): Promise<{ ok: boolean; syncedToCloud: boolean; error?: string }> => {
     siteDataRef.current = nextData;
     setSiteData(nextData);
     try {
@@ -364,36 +387,64 @@ export default function App() {
       console.error('Erro ao salvar no navegador:', e);
     }
 
-    if (commitToCloud && isCloudAdmin) {
-      const cloudBaseline = lastCloudSyncedDataRef.current;
-      setCloudSyncStatus('saving');
-      setCloudSyncError(null);
-      void syncSiteDataDiffToCloud(cloudBaseline, nextData)
-        .then(() => {
+    if (!commitToCloud) {
+      hasPendingLocalDraftRef.current = true;
+      return { ok: true, syncedToCloud: false };
+    }
+
+    hasPendingLocalDraftRef.current = false;
+
+    if (!isCloudAdmin) {
+      return { ok: true, syncedToCloud: false };
+    }
+
+    return new Promise((resolve) => {
+      cloudWriteQueueRef.current = cloudWriteQueueRef.current.then(async () => {
+        activeCloudWritesRef.current += 1;
+        setCloudSyncStatus('saving');
+        setCloudSyncError(null);
+        try {
+          const cloudBaseline = lastCloudSyncedDataRef.current;
+          await syncSiteDataDiffToCloud(cloudBaseline, nextData);
           lastCloudSyncedDataRef.current = nextData;
           setCloudSyncStatus('saved');
-        })
-        .catch((err) => {
+          resolve({ ok: true, syncedToCloud: true });
+        } catch (err) {
+          const msg = formatCloudErrorMessage(err);
           setCloudSyncStatus('error');
-          setCloudSyncError(err instanceof Error ? err.message : 'Falha ao salvar na nuvem.');
-        });
-    }
+          setCloudSyncError(msg);
+          resolve({ ok: false, syncedToCloud: false, error: msg });
+        } finally {
+          activeCloudWritesRef.current = Math.max(0, activeCloudWritesRef.current - 1);
+        }
+      });
+    });
   };
 
   const handleSyncAllToCloud = async () => {
     if (!isCloudAdmin) return;
-    setCloudSyncStatus('saving');
-    setCloudSyncError(null);
-    try {
-      const snapshot = siteDataRef.current;
-      await pushAllCustomizationsToCloud(snapshot);
-      lastCloudSyncedDataRef.current = snapshot;
-      setCloudSyncStatus('saved');
-    } catch (err) {
-      setCloudSyncStatus('error');
-      setCloudSyncError(err instanceof Error ? err.message : 'Falha ao sincronizar com a nuvem.');
-      throw err;
-    }
+    return new Promise<void>((resolve, reject) => {
+      cloudWriteQueueRef.current = cloudWriteQueueRef.current.then(async () => {
+        activeCloudWritesRef.current += 1;
+        setCloudSyncStatus('saving');
+        setCloudSyncError(null);
+        try {
+          const snapshot = siteDataRef.current;
+          hasPendingLocalDraftRef.current = false;
+          await pushAllCustomizationsToCloud(snapshot);
+          lastCloudSyncedDataRef.current = snapshot;
+          setCloudSyncStatus('saved');
+          resolve();
+        } catch (err) {
+          const msg = formatCloudErrorMessage(err);
+          setCloudSyncStatus('error');
+          setCloudSyncError(msg);
+          reject(new Error(msg));
+        } finally {
+          activeCloudWritesRef.current = Math.max(0, activeCloudWritesRef.current - 1);
+        }
+      });
+    });
   };
 
   // Navegação estruturada
@@ -634,6 +685,27 @@ export default function App() {
             throw new Error(
               `A conta ${user.email || 'selecionada'} não está autorizada como administradora.`
             );
+          }
+          const localTime = Number(siteDataRef.current.updatedAt || 0);
+          const cloudTime = Number(cloudMetaRef.current.cloudUpdatedAt || 0);
+          if (localTime > cloudTime) {
+            activeCloudWritesRef.current += 1;
+            setCloudSyncStatus('saving');
+            setCloudSyncError(null);
+            try {
+              const snapshot = siteDataRef.current;
+              hasPendingLocalDraftRef.current = false;
+              await pushAllCustomizationsToCloud(snapshot);
+              lastCloudSyncedDataRef.current = snapshot;
+              setCloudSyncStatus('saved');
+            } catch (err) {
+              const msg = formatCloudErrorMessage(err);
+              setCloudSyncStatus('error');
+              setCloudSyncError(msg);
+              throw new Error(msg);
+            } finally {
+              activeCloudWritesRef.current = Math.max(0, activeCloudWritesRef.current - 1);
+            }
           }
         }}
         onGoogleSignOut={async () => {

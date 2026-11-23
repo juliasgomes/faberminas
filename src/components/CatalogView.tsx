@@ -85,6 +85,10 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [catalogBannerBroken, setCatalogBannerBroken] = useState(false);
 
   useEffect(() => {
+    setBrokenImages({});
+  }, [products]);
+
+  useEffect(() => {
     setCatalogBannerBroken(false);
   }, [bannerCatalog?.image]);
 

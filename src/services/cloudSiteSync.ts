@@ -237,7 +237,7 @@ export function subscribeToCloudSiteData(
   let bannersReady = false;
 
   const emitMerged = () => {
-    if (!settingsReady && !productsReady && !bannersReady) return;
+    if (!settingsReady || !productsReady || !bannersReady) return;
 
     const deletedIds = new Set<number>(
       Array.isArray(settingsDoc?.deletedProductIds) ? settingsDoc!.deletedProductIds : []

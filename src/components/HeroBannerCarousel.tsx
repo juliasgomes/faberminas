@@ -16,6 +16,10 @@ export const HeroBannerCarousel: React.FC<HeroBannerCarouselProps> = ({
   const [paused, setPaused] = useState(false);
   const [brokenSlideImages, setBrokenSlideImages] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    setBrokenSlideImages({});
+  }, [slides]);
+
   const safeIndex = activeSlides.length > 0 ? currentIndex % activeSlides.length : 0;
 
   useEffect(() => {

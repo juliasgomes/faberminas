@@ -52,7 +52,10 @@ type AdminTab = 'produtos' | 'banners' | 'taxonomy' | 'institucional' | 'deploy'
 
 interface AdminDashboardProps {
   siteData: SiteData;
-  onUpdateSiteData: (nextData: SiteData, commitToCloud?: boolean) => void;
+  onUpdateSiteData: (
+    nextData: SiteData,
+    commitToCloud?: boolean
+  ) => void | Promise<{ ok: boolean; syncedToCloud: boolean; error?: string } | void>;
   onRestoreDefaults: () => void | Promise<void>;
   onExitAdmin: () => void;
   authUser: User | null;
@@ -88,7 +91,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('produtos');
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: 'success' | 'warning' | 'error' | 'info';
+  } | null>(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [exportingHtml, setExportingHtml] = useState(false);
   const [exportMeta, setExportMeta] = useState<{
@@ -144,9 +150,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const logoSrc = resolveLogoSrc(siteData.logoDataUrl);
 
-  const showAdminToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast((prev) => (prev === msg ? null : prev)), 3200);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const showAdminToast = (
+    message: string,
+    variant: 'success' | 'warning' | 'error' | 'info' = 'success',
+    durationMs = 3600
+  ) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    const payload = { message, variant };
+    setToast(payload);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((prev) => (prev === payload ? null : prev));
+    }, durationMs);
   };
 
   const recordExportMeta = (type: 'html' | 'json', timestamp: number) => {
@@ -159,13 +177,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const commitData = (next: SiteData, msg: string) => {
-    onUpdateSiteData({ ...next, updatedAt: Date.now() }, true);
-    showAdminToast(msg);
+  const commitData = async (next: SiteData, msg: string) => {
+    const stamped = { ...next, updatedAt: Date.now() };
+    if (isCloudAdmin) {
+      showAdminToast('Salvando na nuvem...', 'info', 10000);
+    }
+    const res = await onUpdateSiteData(stamped, true);
+    if (res && !res.ok) {
+      showAdminToast(
+        `Erro ao salvar na nuvem: ${res.error || 'verifique sua conexão e conta Google.'}`,
+        'error',
+        6500
+      );
+      return;
+    }
+    if (res?.syncedToCloud) {
+      showAdminToast(`${msg} — Salvo na nuvem!`, 'success', 3800);
+    } else {
+      showAdminToast(
+        `${msg} (Salvo apenas neste navegador — conecte sua conta Google no topo para enviar para outros dispositivos!)`,
+        'warning',
+        6500
+      );
+    }
   };
 
   const updateDraft = (next: SiteData) => {
-    onUpdateSiteData({ ...next, updatedAt: Date.now() }, false);
+    void onUpdateSiteData({ ...next, updatedAt: Date.now() }, false);
   };
 
   const handleGoogleConnect = async () => {
@@ -174,14 +212,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       await onGoogleSignIn();
       setIsAuthenticated(true);
-      showAdminToast('Conta Google conectada! Sincronização em nuvem ativada.');
+      showAdminToast('Conta Google conectada! Sincronização em nuvem ativada.', 'success');
     } catch (err) {
       const msg =
         err instanceof Error
           ? err.message
           : 'Não foi possível concluir o login com Google.';
       setGoogleAuthError(msg);
-      showAdminToast(msg);
+      showAdminToast(msg, 'error', 5500);
     } finally {
       setGoogleAuthLoading(false);
     }
@@ -191,10 +229,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setSyncingAll(true);
     try {
       await onSyncAllToCloud();
-      showAdminToast('Todas as fotos e alterações foram publicadas na nuvem!');
+      showAdminToast('Todas as fotos e alterações foram publicadas na nuvem!', 'success');
     } catch (err) {
       showAdminToast(
-        err instanceof Error ? err.message : 'Erro ao sincronizar com a nuvem.'
+        err instanceof Error ? err.message : 'Erro ao sincronizar com a nuvem.',
+        'error',
+        5500
       );
     } finally {
       setSyncingAll(false);
@@ -252,10 +292,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const exportedAt = Math.max(Date.now(), Number(siteData.updatedAt || 0));
       const syncedSnapshot: SiteData = { ...siteData, updatedAt: exportedAt };
-      onUpdateSiteData(syncedSnapshot);
+      void onUpdateSiteData(syncedSnapshot, false);
       await downloadUpdatedSiteHtml(syncedSnapshot);
       recordExportMeta('html', exportedAt);
-      showAdminToast('Site atualizado (.html) salvo e baixado!');
+      showAdminToast('Site atualizado (.html) salvo e baixado!', 'success');
     } finally {
       setExportingHtml(false);
     }
@@ -264,7 +304,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleExportSiteConfigJson = () => {
     const exportedAt = Math.max(Date.now(), Number(siteData.updatedAt || 0));
     const syncedSnapshot: SiteData = { ...siteData, updatedAt: exportedAt };
-    onUpdateSiteData(syncedSnapshot);
+    void onUpdateSiteData(syncedSnapshot, false);
     const blob = new Blob([JSON.stringify(syncedSnapshot, null, 2)], {
       type: 'application/json;charset=utf-8'
     });
@@ -275,7 +315,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     a.click();
     URL.revokeObjectURL(url);
     recordExportMeta('json', exportedAt);
-    showAdminToast('Configuração site-config.json exportada!');
+    showAdminToast('Configuração site-config.json exportada!', 'success');
   };
 
   const moveCarouselSlide = (index: number, direction: -1 | 1) => {
@@ -430,9 +470,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Toast flutuante */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 bg-[#004d61] text-white px-5 py-3.5 rounded-xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-fade-in">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>{toast}</span>
+        <div
+          className={`fixed bottom-5 right-5 z-50 max-w-md px-5 py-3.5 rounded-xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-fade-in ${
+            toast.variant === 'error'
+              ? 'bg-red-700 text-white'
+              : toast.variant === 'warning'
+                ? 'bg-amber-600 text-white'
+                : toast.variant === 'info'
+                  ? 'bg-slate-800 text-white'
+                  : 'bg-[#004d61] text-white'
+          }`}
+        >
+          {toast.variant === 'error' || toast.variant === 'warning' ? (
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+          ) : (
+            <CheckCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -904,8 +958,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         }}
                         className="w-14 h-14 rounded-lg object-cover border border-slate-200"
                       />
-                      <span className="text-xs text-slate-600">
-                        Prévia da imagem pronta para ser embutida no site.
+                      <span className="text-xs text-slate-700 font-medium">
+                        Prévia carregada! Clique em{' '}
+                        <strong>
+                          {editingProductId ? 'Atualizar Produto' : 'Salvar Produto'}
+                        </strong>{' '}
+                        abaixo para publicar na nuvem.
                       </span>
                     </div>
                   )}
@@ -2215,7 +2273,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 800, 0.82, 200000);
+                          const dataUrl = await compressImageToDataURL(f, 800, 0.82, 180000);
                           commitData({ ...siteData, logoDataUrl: dataUrl }, 'Logo atualizada!');
                         }
                         e.target.value = '';
@@ -2288,7 +2346,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onChange={async (e) => {
                         const f = e.target.files?.[0];
                         if (f) {
-                          const dataUrl = await compressImageToDataURL(f, 1200, 0.80, 480000);
+                          const dataUrl = await compressImageToDataURL(f, 1200, 0.80, 440000);
                           commitData(
                             { ...siteData, aboutUsImage: dataUrl },
                             'Imagem da seção Sobre Nós atualizada!'
@@ -2597,10 +2655,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               );
                               commitData(normalized, 'Configuração JSON importada com sucesso!');
                             } else {
-                              showAdminToast('Arquivo JSON inválido.');
+                              showAdminToast('Arquivo JSON inválido.', 'error');
                             }
                           } catch {
-                            showAdminToast('Erro ao ler o arquivo JSON.');
+                            showAdminToast('Erro ao ler o arquivo JSON.', 'error');
                           }
                         };
                         reader.readAsText(file);
@@ -2630,7 +2688,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setExportMeta({ lastExportedAt: 0, lastExportedType: null });
                           onRestoreDefaults();
                           setConfirmRestore(false);
-                          showAdminToast('Dados padrão restaurados.');
+                          showAdminToast('Dados padrão restaurados.', 'success');
                         }}
                         className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-bold cursor-pointer"
                       >

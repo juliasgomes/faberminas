@@ -100,13 +100,33 @@ export function compressImageToDataURL(
         let currentQuality = quality;
         let result = renderAt(currentWidth, currentQuality);
 
-        for (let attempt = 0; attempt < 5 && result.length > maxChars; attempt += 1) {
-          currentQuality = Math.max(0.45, currentQuality - 0.12);
-          currentWidth = Math.max(480, Math.round(currentWidth * 0.78));
+        for (let attempt = 0; attempt < 8 && result.length > maxChars; attempt += 1) {
+          currentQuality = Math.max(0.35, currentQuality - 0.1);
+          currentWidth = Math.max(320, Math.round(currentWidth * 0.75));
           result = renderAt(currentWidth, currentQuality);
+          if (result.length > maxChars) {
+            const jpegAttempt = (() => {
+              let width = img.width || currentWidth;
+              let height = img.height || currentWidth;
+              if (width > currentWidth) {
+                height = Math.round((height * currentWidth) / width);
+                width = currentWidth;
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, width);
+              canvas.height = Math.max(1, height);
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return result;
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              return canvas.toDataURL('image/jpeg', currentQuality);
+            })();
+            if (jpegAttempt.length < result.length) {
+              result = jpegAttempt;
+            }
+          }
         }
 
-        resolve(result.length <= maxChars ? result : result.slice(0, maxChars));
+        resolve(result.length <= maxChars ? result : '');
       };
       img.onerror = () => resolve(originalDataUrl.length <= maxChars ? originalDataUrl : '');
       img.src = originalDataUrl;
