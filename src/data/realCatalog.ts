@@ -289,20 +289,228 @@ const RAW_ENTRIES: RawCatalogEntry[] = [
   { codigo: "XFM22X", nome: "Escova para Roupa Plástica Cerdas Nylon", categoria: "Limpeza", medidas: "Padrão anatômica", especificacoes: "Corpo plástico, cabo ergonômico e cerdas em nylon, marca FM" }
 ];
 
+function curateRoomsAndSegments(
+  item: RawCatalogEntry,
+  catId: string
+): { rooms: string[]; segments: string[] } {
+  const n = norm(item.nome);
+
+  // 1. Itens clínico-hospitalares específicos (imobilização, curativos, neonatologia técnica, berço de ampolas)
+  if (
+    n.includes("splint intranasal") ||
+    n.includes("malha tubular") ||
+    n.includes("tala metalica") ||
+    n.includes("colar cervical") ||
+    n.includes("meia termica") ||
+    n.includes("berco isopor")
+  ) {
+    return { rooms: [], segments: ["clinicas"] };
+  }
+
+  // 2. Mamadeiras, bicos, escova de mamadeiras e chupetas
+  if (n.includes("bico de mamadeira") || n.includes("mamadeira")) {
+    return { rooms: ["cozinha"], segments: ["clinicas", "residencial"] };
+  }
+  if (n.includes("chupeta")) {
+    return { rooms: ["banheiro"], segments: ["clinicas", "residencial"] };
+  }
+
+  // 3. Fraldas (infantil/geriátrica) e absorvente pós-operatório
+  if (n.includes("fralda") || n.includes("absorvente higienico")) {
+    return { rooms: ["banheiro"], segments: ["clinicas", "residencial"] };
+  }
+
+  // 4. Caixa térmica EPS
+  if (n.includes("caixa termica isopor")) {
+    return { rooms: ["cozinha"], segments: ["clinicas", "restaurantes", "residencial"] };
+  }
+
+  // 5. Ferramentas manuais e baldes de serviço
+  if (n.includes("martelo") || n.includes("arco de serra") || n.includes("trena")) {
+    return { rooms: ["area-servico"], segments: ["condominios", "residencial"] };
+  }
+  if (n.includes("balde")) {
+    return {
+      rooms: ["area-servico"],
+      segments: ["condominios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+
+  // 6. Touca TNT descartável (cozinhas profissionais e clínicas)
+  if (n.includes("touca tnt")) {
+    return { rooms: ["cozinha"], segments: ["clinicas", "restaurantes"] };
+  }
+
+  // 7. Higiene pessoal (sachês corporativos/clínicos e itens individuais de banho/bucal)
+  if (
+    n.includes("sabonete sache") ||
+    n.includes("shampoo 2 em 1 sache") ||
+    n.includes("sabonete liquido sache")
+  ) {
+    return { rooms: ["banheiro"], segments: ["clinicas", "escritorios", "residencial"] };
+  }
+  if (catId === "higiene-pessoal") {
+    return { rooms: ["banheiro"], segments: ["clinicas", "residencial"] };
+  }
+
+  // 8. Lixeiras & pás de lixo
+  if (n.includes("lixeira escritorio")) {
+    return {
+      rooms: ["escritorio", "banheiro"],
+      segments: ["condominios", "escritorios", "clinicas", "residencial"]
+    };
+  }
+  if (n.includes("lixeira") && n.includes("15 litros")) {
+    return {
+      rooms: ["banheiro", "cozinha"],
+      segments: ["clinicas", "escritorios", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("lixeira")) {
+    return {
+      rooms: ["area-servico", "cozinha"],
+      segments: ["condominios", "clinicas", "restaurantes"]
+    };
+  }
+  if (n.includes("pa de lixo")) {
+    return {
+      rooms: ["area-servico", "escritorio", "cozinha"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+
+  // 9. Capachos & fibra vinílica para entradas/recepção
+  if (n.includes("capacho")) {
+    return {
+      rooms: ["escritorio"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("fibra vinil rolo")) {
+    return {
+      rooms: ["escritorio"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes"]
+    };
+  }
+
+  // 10. Discos de enceradeira industrial/conservação de pisos
+  if (n.includes("disco enceradeira")) {
+    return {
+      rooms: ["area-servico"],
+      segments: ["condominios", "escritorios", "clinicas"]
+    };
+  }
+
+  // 11. Sanitários e desentupidores
+  if (
+    n.includes("vaso sanitario") ||
+    n.includes("desentupidor sanitario") ||
+    n.includes("esponja sanitaria")
+  ) {
+    return {
+      rooms: ["banheiro"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("desentupidor de pia")) {
+    return {
+      rooms: ["cozinha", "banheiro"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+
+  // 12. Escovas específicas
+  if (n.includes("higienizacao recipientes")) {
+    return { rooms: ["cozinha"], segments: ["clinicas", "restaurantes", "residencial"] };
+  }
+  if (n.includes("limpeza das unhas")) {
+    return { rooms: ["banheiro"], segments: ["clinicas", "restaurantes", "residencial"] };
+  }
+  if (n.includes("escova") && n.includes("roupa")) {
+    return { rooms: ["area-servico"], segments: ["condominios", "residencial"] };
+  }
+
+  // 13. Panos & flanelas
+  if (n.includes("pano de prato")) {
+    return { rooms: ["cozinha"], segments: ["escritorios", "restaurantes", "residencial"] };
+  }
+  if (n.includes("pano de chao")) {
+    return {
+      rooms: ["area-servico", "cozinha", "banheiro"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("flanela")) {
+    return {
+      rooms: ["escritorio", "cozinha", "area-servico"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+
+  // 14. Esponjas, fibras abrasivas/leves, pastas e sabões
+  if (n.includes("esponja") || n.includes("fibra sintetica")) {
+    return {
+      rooms: ["cozinha", "area-servico"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("pasta para limpeza") || n.includes("sabao")) {
+    return {
+      rooms: ["area-servico", "cozinha"],
+      segments: ["condominios", "restaurantes", "residencial"]
+    };
+  }
+
+  // 15. Vassouras, vassourões, vasculhos, rodos, mops e cabos
+  if (n.includes("vassourao") || n.includes("vasculho")) {
+    return {
+      rooms: ["area-servico"],
+      segments: ["condominios", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("vassoura")) {
+    return {
+      rooms: ["area-servico", "cozinha"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("rodo")) {
+    return {
+      rooms: ["area-servico", "banheiro", "cozinha"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("mop")) {
+    return {
+      rooms: ["area-servico", "escritorio", "cozinha"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+  if (n.includes("cabo") || n.includes("prolongador")) {
+    return {
+      rooms: ["area-servico"],
+      segments: ["condominios", "escritorios", "clinicas", "restaurantes", "residencial"]
+    };
+  }
+
+  return { rooms: ["area-servico"], segments: ["condominios", "residencial"] };
+}
+
 export const REAL_CATALOG_PRODUCTS: Product[] = RAW_ENTRIES.map((item, idx) => {
   const catLabel = item.categoria && CATEGORY_MAP[item.categoria] ? item.categoria : "Diversos";
   const catId = CATEGORY_MAP[catLabel] || "diversos";
   const measures = (item.medidas || "").trim() || "Padrão comercial";
   const spec = (item.especificacoes || "").trim() || "Uso geral / padrão distribuidor";
   const cleanName = cleanProductTitle(item.nome);
+  const { rooms, segments } = curateRoomsAndSegments(item, catId);
 
   return {
     id: idx + 1,
     sku: item.codigo,
     name: cleanName,
     category: catId,
-    rooms: [],
-    segments: [],
+    rooms,
+    segments,
     about: buildAbout(catLabel, cleanName, item.nome),
     description: buildDescription(item.nome, catLabel, measures),
     measures,
